@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spatial OS</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --px: 3px; /* pixel size */
+  --ui-bg-top: #ffffff;
+  --ui-bg-bottom: #000000;
+  --ui-text: #000000;
+  --ui-text-soft: #000000;
+  --ui-highlight: #ffffff;
+  --ui-border-dark: #000000;
+  --ui-border-light: #ffffff;
+  --ui-overlay: rgba(0, 0, 0, 0.6);
+}
+
+html, body {
+  width:100%; height:100%;
+  background: linear-gradient(180deg, var(--ui-bg-top) 0%, var(--ui-bg-bottom) 100%);
+  overflow: hidden;
+  cursor: none;
+  image-rendering: pixelated;
+  font-family: "MS Sans Serif", "Microsoft Sans Serif", "Tahoma", "Geneva", sans-serif;
+}
+
+/* ── Custom cursor ── */
+#cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  image-rendering: pixelated;
+}
+#cursor canvas { display:block; }
+
+/* ── Window frame ── */
+/* shared frame thickness */
+:root { --frame: 24px; --frame-side: 16px; }
+
+/* top bar (menu) */
+#menubar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--frame);
+  background: var(--ui-bg-top);
+  border-bottom: 2px solid var(--ui-border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  z-index: 200;
+  user-select: none;
+}
+/* bottom bar */
+#frame-bottom {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--frame);
+  background: var(--ui-bg-top);
+  /* border-top: 2px solid var(--ui-border-dark); */
+  z-index: 200;
+}
+/* left bar */
+#frame-left {
+  position: fixed;
+  top: var(--frame); bottom: var(--frame); left: 0;
+  width: var(--frame-side);
+  background: var(--ui-bg-top);
+  /* border-right: 2px solid var(--ui-border-dark); */
+  z-index: 200;
+}
+/* right bar */
+#frame-right {
+  position: fixed;
+  top: var(--frame); bottom: var(--frame); right: 0;
+  width: var(--frame-side);
+  background: var(--ui-bg-top);
+  border-left: 2px solid var(--ui-border-dark);
+  z-index: 200;
+}
+#menubar-items {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+.mb-item {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ui-text);
+  cursor: none;
+  position: relative;
+}
+.mb-item.active,
+.mb-item:hover {
+  background: var(--ui-border-dark);
+  color: var(--ui-highlight);
+}
+#menu-dropdown,
+#menu-submenu,
+#menu-subsubmenu,
+.menu-option {
+  cursor: none !important;
+}
+#menu-dropdown {
+  position: fixed;
+  top: calc(var(--frame) + 2px);
+  min-width: 180px;
+  max-width: 240px;
+  padding: 10px;
+  background: rgba(255,255,255,0.98);
+  border: 1px solid rgba(0,0,0,0.25);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+  border-radius: 0;
+  z-index: 210;
+  display: none;
+  font-size: 10px;
+  color: #000000;
+  backdrop-filter: blur(8px);
+}
+#menu-dropdown.active {
+  display: block;
+}
+#menu-submenu,
+#menu-subsubmenu {
+  position: fixed;
+  min-width: 180px;
+  max-width: 240px;
+  padding: 10px;
+  background: rgba(255,255,255,0.98);
+  border: 1px solid rgba(0,0,0,0.25);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+  border-radius: 0;
+  z-index: 220;
+  display: none;
+  font-size: 10px;
+  color: #000000;
+  backdrop-filter: blur(8px);
+}
+#menu-submenu.active,
+#menu-subsubmenu.active {
+  display: block;
+}
+#menu-dropdown h4 {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #000000;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.menu-option {
+  width: 100%;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  background: transparent;
+  color: #000000;
+  text-align: left;
+  cursor: pointer;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+}
+.menu-option:last-child {
+  border-bottom: none;
+}
+.menu-option:hover {
+  background: rgba(0,0,0,0.08);
+}
+.menu-option.selected {
+  font-weight: 700;
+  background: rgba(0,0,0,0.12);
+}
+.menu-option.small {
+  font-size: 10px;
+  padding: 8px 12px;
+}
+.menu-group {
+  display: flex;
+  flex-direction: column;
+}
+#menu-dropdown.info-menu,
+#menu-dropdown.find-menu {
+  min-width: 280px;
+  max-width: 360px;
+}
+.menu-find-input {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: #ffffff;
+  color: #000000;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.02em;
+  outline: none;
+  margin-bottom: 8px;
+}
+.menu-find-input:focus {
+  border-color: #000000;
+}
+.menu-find-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.menu-find-result {
+  padding: 8px 2px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 10px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: #000000;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-transform: none;
+}
+.menu-find-result:last-child {
+  border-bottom: none;
+}
+.menu-find-result strong {
+  display: block;
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+.menu-find-empty {
+  font-size: 10px;
+  color: #444444;
+  padding: 6px 2px;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+.menu-find-hint {
+  font-size: 9px;
+  color: #666666;
+  margin: 0 0 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.menu-description {
+  margin: 0;
+  padding: 2px 2px 4px;
+  font-size: 11px;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  color: #000000;
+  text-transform: none;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+#mb-clock {
+  font-family: "Lucida Console", "Monaco", "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ui-text);
+  padding-right: 8px;
+}
+
+/* ── HUD ── */
+#hud {
+  position: fixed;
+  top: 24px; left: 16px; right: 16px;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 100;
+  pointer-events: none;
+}
+#hud-left, #hud-right {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  font-family: "courier new", monospace;
+  line-height: 1.8;
+  text-transform: uppercase;
+}
+#hud-files, #hud-room {
+  -webkit-text-stroke: 1px #ffffff;
+  paint-order: stroke fill;
+  text-shadow:
+    1px 0 0 #ffffff, -1px 0 0 #ffffff,
+    0 1px 0 #ffffff, 0 -1px 0 #ffffff;
+}
+#hud-room {
+  font-size: 19px;
+  letter-spacing: 0.1em;
+  font-family: "courier new", monospace;
+  color: var(--ui-text);
+  text-align: center;
+}
+#hud-coords {
+  font-size: 9px;
+  color: var(--ui-text-soft);
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ── Minimap ── */
+#minimap {
+  position: fixed;
+  bottom: calc(var(--frame) + 8px);
+  left: calc(var(--frame-side) + 8px);
+  z-index: 100;
+  image-rendering: pixelated;
+  opacity: 0.92;
+  border: 2px solid var(--ui-border-dark);
+  box-shadow: 0 0 0 2px var(--ui-border-light);
+}
+
+/* ── Hint ── */
+#hint {
+  position: fixed;
+  bottom: calc(var(--frame) + 8px);
+  right: calc(var(--frame-side) + 8px);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--ui-text);
+  z-index: 100;
+  line-height: 1.8;
+  text-align: right;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 var(--ui-highlight);
+}
+
+/* ── World canvas ── */
+#world {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Inspector ── */
+#inspector {
+  position: fixed;
+  inset: 0;
+  background: var(--ui-overlay);
+  backdrop-filter: blur(7px) saturate(1.05);
+  -webkit-backdrop-filter: blur(7px) saturate(1.05);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#inspector.active {
+  opacity: 1;
+  pointer-events: all;
+}
+.inspector-box {
+  width: 620px;
+  background: #ffffff;
+  border: 2px solid #000000;
+  padding: 8px 12px 12px;
+  position: relative;
+  image-rendering: auto;
+  box-shadow: none;
+}
+.inspector-box::before {
+  content: none;
+}
+.insp-title {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: #000000;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.72);
+}
+.insp-sub {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: #111111;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 0;
+  border-bottom: none;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+.insp-viewer {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 0;
+}
+.insp-canvas-wrap {
+  position: relative;
+}
+#insp-canvas {
+  display: block;
+  width: 100%;
+  height: 340px;
+  image-rendering: pixelated;
+  border: 2px solid #000000;
+  background: #ffffff;
+  cursor: none;
+}
+.insp-hover {
+  margin-top: 10px;
+  min-height: 14px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #000000;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+.insp-hintline {
+  margin-top: 4px;
+  font-size: 8px;
+  color: #000000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.48);
+}
+.insp-actions {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.insp-actions input {
+  flex: 1;
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  padding: 6px 8px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+.insp-actions button {
+  border: 1px solid #000000;
+  background: #000000;
+  color: #ffffff;
+  padding: 6px 10px;
+  font-size: 10px;
+  cursor: pointer;
+}
+.insp-actions button:hover {
+  background: #222222;
+}
+.insp-trash-pin {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #000;
+  background: #ffffff;
+  color: #000;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  opacity: 0.45;
+  transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+}
+.insp-trash-pin.ready {
+  opacity: 1;
+  border-color: #2288ff;
+  background: #e8f4ff;
+}
+.insp-trash-pin.ready:hover {
+  background: #cce8ff;
+}
+.insp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #000000;
+  cursor: default;
+}
+.insp-item:last-child { border-bottom: none; }
+.insp-dot {
+  width: 6px; height: 6px;
+  flex-shrink: 0;
+}
+.insp-name {
+  flex: 1;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: #000000;
+}
+.insp-age {
+  font-size: 9px;
+  color: #111111;
+  letter-spacing: 0.1em;
+}
+.insp-close {
+  position: absolute;
+  top: 2px; right: 2px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #000000;
+  color: #000000;
+  font-family: "MS Sans Serif", "Microsoft Sans Serif", "Tahoma", "Geneva", sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  cursor: none;
+}
+.insp-close:hover { border-color: #000000; color: #000000; background: #ffffff; }
+.insp-reader {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: #ffffff;
+  border: 2px solid #000000;
+  padding: 10px 12px 12px;
+  flex-direction: column;
+  overflow: hidden;
+}
+.insp-reader.active {
+  display: flex;
+}
+.insp-reader-close {
+  align-self: flex-end;
+  background: #ffffff;
+  border: 1px solid #000000;
+  color: #000000;
+  font-family: "MS Sans Serif", "Microsoft Sans Serif", "Tahoma", "Geneva", sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.insp-reader-title {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #000000;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #000000;
+}
+.insp-reader-body {
+  flex: 1;
+  overflow-y: auto;
+  font-family: "Lucida Console", "Monaco", "Courier New", monospace;
+  font-size: 10px;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  color: #111111;
+  white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"><canvas width="12" height="12"></canvas></div>
+
+<div id="menubar">
+  <div id="menubar-items">
+    <div class="mb-item">Info</div>
+    <div class="mb-item">File</div>
+    <div class="mb-item">Edit</div>
+    <div class="mb-item">Find</div>
+  </div>
+  <div id="mb-clock">—</div>
+</div>
+<div id="menu-dropdown"></div>
+<div id="menu-submenu"></div>
+<div id="menu-subsubmenu"></div>
+<div id="frame-bottom"></div>
+<div id="frame-left"></div>
+<div id="frame-right"></div>
+
+<div id="hud">
+  <div id="hud-left">
+    <div id="hud-files">objects: —</div>
+  </div>
+  <div>
+    <div id="hud-room">—</div>
+    <div id="hud-coords">x:0 y:0</div>
+  </div>
+  <div id="hud-right"></div>
+</div>
+
+<canvas id="minimap" width="120" height="90"></canvas>
+
+<div id="hint">
+  move cursor to pan<br>
+  click objects to open
+</div>
+
+<div id="world">
+  <canvas id="main"></canvas>
+</div>
+
+<div id="inspector">
+  <div class="inspector-box">
+    <button class="insp-close" id="insp-close">esc ×</button>
+    <div class="insp-title" id="insp-title">—</div>
+    <div class="insp-sub" id="insp-sub">—</div>
+    <div class="insp-viewer" id="insp-content">
+      <div class="insp-canvas-wrap">
+        <canvas id="insp-canvas" width="560" height="340"></canvas>
+        <button id="insp-trash-pin" class="insp-trash-pin" type="button" title="Move selected file to trash">🗑</button>
+        <div id="insp-reader" class="insp-reader">
+          <button type="button" class="insp-reader-close" id="insp-reader-close">back ×</button>
+          <div class="insp-reader-title" id="insp-reader-title">—</div>
+          <div class="insp-reader-body" id="insp-reader-body"></div>
+        </div>
+      </div>
+      <div class="insp-hover" id="insp-hover">hover a file...</div>
+      <div class="insp-hintline">click a file, then trash to delete</div>
+      <div class="insp-actions" id="insp-actions">
+        <input id="insp-file-name" type="text" placeholder="new-file.txt" maxlength="32" />
+        <button id="insp-create-btn">create .txt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════
+const PX = 3;          // pixel size
+const TW = 30;         // tile width in pixels
+const TH =10;         // tile height in pixels (isometric)
+const TWP = TW * PX;   // tile width in screen px
+const THP = TH * PX;   // tile height in screen px
+
+// Colour palette (black & white + grays)
+const C = {
+  bg:      '#000000',
+  black:   '#000000',
+  d4:      '#000000',
+  d3:      '#000000',
+  d2:      '#333333',
+  d1:      '#555555',
+  mid:     '#888888',
+  m2:      '#aaaaaa',
+  m3:      '#cccccc',
+  m4:      '#eeeeee',
+  light:   '#ffffff',
+  l2:      '#ffffff',
+  l3:      '#ffffff',
+  white:   '#ffffff',
+  floor_a: '#ffffff',
+  floor_b: '#f0f0f0',
+  wall_a:  '#000000',
+  wall_b:  '#000000',
+  wall_c:  '#000000',
+  accent:  '#000000',
+};
+
+// ════════════════════════════════════════════
+// WORLD DEFINITION
+// Floor plan:
+//   [studio]  [hallway]  [archive]
+//                [study]
+// ════════════════════════════════════════════
+
+// World dimensions in tiles
+const WORLD_W = 44;
+const WORLD_H = 36;
+
+// Room definitions: tile rectangles (tx, ty, tw, th)
+const ROOMS = [
+  { id: 'studio',  name: 'The Studio',  tx:0,  ty:0,  tw:18, th:18, wallH:6 },
+  { id: 'hallway', name: 'The Hall',    tx:18, ty:4,  tw:8,  th:10, wallH:4 },
+  { id: 'archive', name: 'The Archive', tx:26, ty:0,  tw:18, th:18, wallH:6 },
+  { id: 'study',   name: 'The Study',   tx:12, ty:18, tw:20, th:18, wallH:6 },
+];
+
+const ROOM_STYLES = {
+  studio: {
+    floorA: '#ffffff', floorB: '#f0f0f0',
+    wallCap: '#000000', wallNorthLeft: '#000000', wallNorthRight: '#111111',
+    wallWestLeft: '#000000', wallWestRight: '#111111',
+    minimap: '#ffffff', hud: '#000000'
+  },
+  hallway: {
+    floorA: '#ffffff', floorB: '#f0f0f0',
+    wallCap: '#000000', wallNorthLeft: '#000000', wallNorthRight: '#111111',
+    wallWestLeft: '#000000', wallWestRight: '#111111',
+    minimap: '#ffffff', hud: '#000000'
+  },
+  archive: {
+    floorA: '#ffffff', floorB: '#f0f0f0',
+    wallCap: '#000000', wallNorthLeft: '#000000', wallNorthRight: '#111111',
+    wallWestLeft: '#000000', wallWestRight: '#111111',
+    minimap: '#ffffff', hud: '#000000'
+  },
+  study: {
+    floorA: '#ffffff', floorB: '#f0f0f0',
+    wallCap: '#000000', wallNorthLeft: '#000000', wallNorthRight: '#111111',
+    wallWestLeft: '#000000', wallWestRight: '#111111',
+    minimap: '#ffffff', hud: '#000000'
+  },
+  door: {
+    floorA: '#ffffff', floorB: '#f0f0f0',
+    wallCap: '#000000', wallNorthLeft: '#000000', wallNorthRight: '#111111',
+    wallWestLeft: '#000000', wallWestRight: '#111111',
+    minimap: '#ffffff', hud: '#000000'
+  },
+  default: {
+    floorA: C.floor_a, floorB: C.floor_b,
+    wallCap: C.wall_b, wallNorthLeft: C.d2, wallNorthRight: C.wall_a,
+    wallWestLeft: C.d1, wallWestRight: C.d2,
+    minimap: '#ffffff', hud: '#000000'
+  }
+};
+
+// ── Background music (/music) ──
+const MUSIC_TRACKS = [
+  { id: 'dew-settles', title: 'The dew settles', src: 'music/02. The dew settles.mp3' },
+  { id: 'first-signal', title: 'First signal', src: 'music/05. First signal.mp3' },
+  { id: 'podzol', title: 'Podzol', src: 'music/06. Podzol.mp3' },
+  { id: 'without-a-care', title: 'Without a care', src: 'music/12. Without a care.mp3' },
+];
+const MUSIC_DEFAULT_ID = 'dew-settles';
+const MUSIC_VOLUME = 0.42;
+const MUSIC_STORAGE_KEY = 'spaceos-song';
+
+let bgMusic = null;
+let currentSongId = MUSIC_DEFAULT_ID;
+let musicStarted = false;
+
+function getMusicTrack(songId) {
+  return MUSIC_TRACKS.find(t => t.id === songId) || MUSIC_TRACKS.find(t => t.id === MUSIC_DEFAULT_ID);
+}
+
+function initBgMusic() {
+  if (bgMusic) return;
+  bgMusic = new Audio();
+  bgMusic.loop = true;
+  bgMusic.volume = MUSIC_VOLUME;
+  bgMusic.preload = 'auto';
+}
+
+function loadSavedSongId() {
+  try {
+    const saved = localStorage.getItem(MUSIC_STORAGE_KEY);
+    if (saved && MUSIC_TRACKS.some(t => t.id === saved)) return saved;
+  } catch (e) {}
+  return MUSIC_DEFAULT_ID;
+}
+
+function playBgMusic(songId) {
+  const track = getMusicTrack(songId);
+  initBgMusic();
+  currentSongId = track.id;
+  try { localStorage.setItem(MUSIC_STORAGE_KEY, track.id); } catch (e) {}
+
+  if (bgMusic.dataset.loadedId === track.id && !bgMusic.paused) return;
+
+  bgMusic.pause();
+  bgMusic.dataset.loadedId = track.id;
+  bgMusic.src = encodeURI(track.src);
+  bgMusic.currentTime = 0;
+  bgMusic.play().catch(() => {});
+}
+
+function startBackgroundMusic() {
+  if (musicStarted) return;
+  musicStarted = true;
+  currentSongId = loadSavedSongId();
+  playBgMusic(currentSongId);
+}
+
+let clickAudioCtx = null;
+
+function playSelectionClick() {
+  if (!clickAudioCtx) {
+    clickAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (clickAudioCtx.state === 'suspended') {
+    clickAudioCtx.resume().catch(() => {});
+  }
+  const t = clickAudioCtx.currentTime;
+  const sampleRate = clickAudioCtx.sampleRate;
+  const duration = 0.022;
+  const bufferSize = Math.max(1, Math.floor(sampleRate * duration));
+  const buffer = clickAudioCtx.createBuffer(1, bufferSize, sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    const env = Math.exp(-i / (bufferSize * 0.22));
+    data[i] = (Math.random() * 2 - 1) * env;
+  }
+  const noise = clickAudioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = clickAudioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(3400, t);
+  filter.Q.setValueAtTime(1.1, t);
+  const noiseGain = clickAudioCtx.createGain();
+  noiseGain.gain.setValueAtTime(0.42, t);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  noise.connect(filter);
+  filter.connect(noiseGain);
+  noiseGain.connect(clickAudioCtx.destination);
+  noise.start(t);
+  noise.stop(t + duration + 0.005);
+}
+
+window.addEventListener('click', () => {
+  startBackgroundMusic();
+}, { once: true, passive: true });
+
+// Doors (openings between rooms, in tiles)
+const DOORS = [
+  { x:18, y:8,  w:1, h:4, dir:'ew' },  // studio <-> hall
+  { x:24, y:8,  w:1, h:4, dir:'ew' },  // hall <-> archive
+  { x:16, y:18, w:6, h:1, dir:'ns' },  // studio <-> study
+  { x:26, y:18, w:6, h:1, dir:'ns' },  // archive <-> study
+];
+
+// ── Objects in world ──
+// type: pinboard | trunk | drawer | desk | shelf | pile
+const OBJECTS = [
+  // Studio
+  { id:'studio-pinboard', room:'studio', type:'pinboard', tx:2,  ty:2,  label:'Pinboard',
+    files:[
+      { name:'thesis ch.2 — spatial memory',           age:'today',      fresh:3 },
+      { name:'talk to Lindström — phenomenology',      age:'2 days',     fresh:3 },
+      { name:'Cordell notes p.12–18',                  age:'1 week',     fresh:2 },
+      { name:'reference list — lit review',            age:'1 week',     fresh:2 },
+      { name:'annotated article — space/place',        age:'2 weeks',    fresh:2 },
+      { name:'conference abstract',                    age:'3 weeks',    fresh:1 },
+      { name:'bibliography — urban studies',           age:'1 month',    fresh:1 },
+      { name:'timeline draft',                         age:'2 months',   fresh:1 },
+    ]
+  },
+  { id:'studio-desk', room:'studio', type:'desk', tx:6, ty:6, label:'Work Desk',
+    files:[
+      { name:'current draft.txt',              age:'today',  fresh:3 },
+      { name:'sketches-v3.png',                age:'today',  fresh:3 },
+      { name:'notes-messy.txt',                age:'3 days', fresh:2 },
+      { name:'editing checklist',               age:'4 days', fresh:2 },
+      { name:'new concept diagram',             age:'1 week', fresh:2 },
+      { name:'slides outline',                  age:'1 week', fresh:2 },
+      { name:'journal submission notes',        age:'2 weeks', fresh:1 },
+      { name:'feedback from advisor',           age:'2 weeks', fresh:1 },
+    ]
+  },
+  { id:'studio-pile', room:'studio', type:'pile', tx:14, ty:10, label:'Floor Pile',
+    files:[
+      { name:'old sketches v1',                age:'2 weeks', fresh:1 },
+      { name:'printed references',             age:'3 weeks', fresh:1 },
+      { name:'misc scraps',                    age:'1 month', fresh:0 },
+      { name:'photograph',                     age:'1 month', fresh:0 },
+      { name:'meeting notes',                  age:'6 weeks', fresh:1 },
+      { name:'experimental logs',              age:'2 months', fresh:0 },
+      { name:'unfinished memo',                 age:'2 months', fresh:0 },
+      { name:'archive printout',               age:'3 months', fresh:0 },
+      { name:'scrap paper stack',              age:'4 months', fresh:0 },
+    ]
+  },
+  { id:'studio-shelf', room:'studio', type:'shelf', tx:1, ty:8, label:'Shelf',
+    files:[
+      { name:'Merleau-Ponty — Phenomenology of Perception', age:'2 months', fresh:1 },
+      { name:'Gibson — The Ecological Approach',            age:'3 months', fresh:1 },
+      { name:'Bachelard — The Poetics of Space',            age:'1 month',  fresh:2 },
+      { name:'Haraway — Situated Knowledges',                age:'4 months', fresh:1 },
+      { name:'Latour — Reassembling the Social',            age:'5 months', fresh:0 },
+      { name:'Deleuze — A Thousand Plateaus',               age:'6 months', fresh:0 },
+      { name:'Tsing — Mushroom at the End of the World',     age:'2 months', fresh:1 },
+      { name:'Dataset notes — site mapping',                 age:'3 weeks', fresh:2 },
+    ]
+  },
+
+  // Archive
+  { id:'archive-trunk1', room:'archive', type:'trunk', tx:28, ty:2, label:'Large Trunk',
+    files:[
+      { name:'year-1 project files',          age:'8 months', fresh:0 },
+      { name:'old presentation decks',        age:'9 months', fresh:0 },
+      { name:'discarded concepts',            age:'1 year',   fresh:0 },
+      { name:'email exports',                 age:'6 months', fresh:0 },
+      { name:'conference materials',          age:'10 months',fresh:0 },
+      { name:'survey printouts',              age:'11 months',fresh:0 },
+      { name:'archived drafts',               age:'1 year',   fresh:0 },
+      { name:'grant application notes',       age:'9 months', fresh:0 },
+      { name:'old notebook sheets',           age:'1 year',   fresh:0 },
+    ]
+  },
+  { id:'archive-trunk2', room:'archive', type:'trunk', tx:32, ty:8, label:'Small Trunk',
+    files:[
+      { name:'photos — fieldwork 2023',        age:'5 months', fresh:1 },
+      { name:'interview recordings',           age:'5 months', fresh:1 },
+      { name:'audio logs',                     age:'5 months', fresh:1 },
+      { name:'photo captions',                 age:'5 months', fresh:1 },
+      { name:'transcription drafts',           age:'6 months', fresh:0 },
+      { name:'location notes',                 age:'6 months', fresh:0 },
+      { name:'research receipts',              age:'7 months', fresh:0 },
+    ]
+  },
+  { id:'archive-drawer', room:'archive', type:'drawer', tx:29, ty:12, label:'Filing Drawer',
+    files:[
+      { name:'receipts',                      age:'4 months',  fresh:1 },
+      { name:'admin — uni forms',             age:'6 months',  fresh:0 },
+      { name:'old feedback sheets',           age:'7 months',  fresh:0 },
+      { name:'invoice copies',                age:'8 months',  fresh:0 },
+      { name:'printer logs',                  age:'8 months',  fresh:0 },
+      { name:'vendor correspondence',         age:'9 months',  fresh:0 },
+      { name:'meeting handouts',              age:'10 months', fresh:0 },
+      { name:'archival receipts',             age:'1 year',    fresh:0 },
+      { name:'file labels',                   age:'1 year',    fresh:0 },
+    ]
+  },
+  { id:'archive-pile', room:'archive', type:'pile', tx:38, ty:14, label:'Floor Stack',
+    files:[
+      { name:'printed readings',              age:'6 months', fresh:0 },
+      { name:'more printed readings',         age:'8 months', fresh:0 },
+      { name:'old photocopies',               age:'9 months', fresh:0 },
+      { name:'project summaries',             age:'10 months',fresh:0 },
+      { name:'historic notes',                age:'11 months',fresh:0 },
+      { name:'folded posters',                age:'1 year',   fresh:0 },
+      { name:'extra handouts',                age:'1 year',   fresh:0 },
+      { name:'legacy printouts',              age:'1 year',   fresh:0 },
+    ]
+  },
+
+  // Study
+  { id:'study-desk', room:'study', type:'desk', tx:16, ty:22, label:'Reading Desk',
+    files:[
+      { name:'active reading — Massumi',      age:'today',  fresh:3 },
+      { name:'annotation notes',               age:'2 days', fresh:3 },
+      { name:'marginalia page',                age:'4 days', fresh:2 },
+      { name:'quote capture sheet',            age:'5 days', fresh:2 },
+      { name:'draft paragraph',                age:'1 week', fresh:2 },
+      { name:'section outline',                age:'1 week', fresh:2 },
+      { name:'revised bibliography',           age:'2 weeks', fresh:1 },
+      { name:'citation tracker',               age:'2 weeks', fresh:1 },
+    ]
+  },
+  { id:'study-shelf1', room:'study', type:'shelf', tx:13, ty:20, label:'Reference Shelf',
+    files:[
+      { name:'Lefebvre — The Production of Space', age:'2 weeks', fresh:2 },
+      { name:'de Certeau — The Practice of Everyday Life', age:'1 month', fresh:1 },
+      { name:'Soja — Thirdspace',                     age:'6 weeks', fresh:1 },
+      { name:'Amin — Land of Strangers',               age:'3 months', fresh:0 },
+      { name:'Gordon — Ghostly Matters',               age:'4 months', fresh:0 },
+      { name:'Urry — Sociology Beyond Societies',      age:'5 months', fresh:0 },
+      { name:'Massey — For Space',                     age:'5 months', fresh:0 },
+      { name:'notes for seminar',                      age:'3 weeks', fresh:1 },
+    ]
+  },
+  { id:'study-pile', room:'study', type:'pile', tx:28, ty:28, label:'Reading Stack',
+    files:[
+      { name:'unread xeroxes',                   age:'3 weeks', fresh:1 },
+      { name:'to-read pile',                     age:'2 weeks', fresh:1 },
+      { name:'lecture handouts',                 age:'1 month', fresh:1 },
+      { name:'journal clippings',                age:'5 weeks', fresh:1 },
+      { name:'research notes',                   age:'6 weeks', fresh:1 },
+      { name:'draft essays',                     age:'2 months', fresh:0 },
+      { name:'course feedback',                  age:'2 months', fresh:0 },
+      { name:'event flyers',                     age:'3 months', fresh:0 },
+      { name:'misc bookmarks',                   age:'3 months', fresh:0 },
+    ]
+  },
+  { id:'studio-trash', room:'studio', type:'trash', tx:20, ty:6, label:'Trash Bin',
+    files: [] // files added dynamically when deleted
+  },
+];
+
+// ════════════════════════════════════════════
+// ISO MATH
+// ════════════════════════════════════════════
+// Isometric: tile (tx, ty) → screen (sx, sy)
+// We use a "cabinet oblique" style: x goes right+down, y goes left+down
+function tileToScreen(tx, ty) {
+  return {
+    sx: (tx - ty) * TWP / 2,
+    sy: (tx + ty) * THP / 2,
+  };
+}
+
+function screenToTile(sx, sy) {
+  return {
+    tx: (sx / (TWP/2) + sy / (THP/2)) / 2,
+    ty: (sy / (THP/2) - sx / (TWP/2)) / 2,
+  };
+}
+
+// ════════════════════════════════════════════
+// CANVAS SETUP
+// ════════════════════════════════════════════
+const canvas = document.getElementById('main');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+// World extent in screen coords
+const worldScreenMin = tileToScreen(0, WORLD_H);
+const worldScreenMax = tileToScreen(WORLD_W, 0);
+const worldW_px = worldScreenMax.sx - worldScreenMin.sx + TWP * 4;
+const worldH_px = tileToScreen(WORLD_W, WORLD_H).sy + 60 * PX;
+
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Camera: offset in world-screen coords
+let camX = worldW_px / 2 - canvas.width  / 2 + (WORLD_W - WORLD_H) * TWP/4;
+let camY = worldH_px / 2 - canvas.height / 2 - 40;
+
+// ════════════════════════════════════════════
+// DRAG STATE
+// ════════════════════════════════════════════
+let dragging = false;
+let dragStartX = 0, dragStartY = 0;
+let camStartX = 0, camStartY = 0;
+let dragDist = 0;
+let mx = canvas.width / 2, my = canvas.height / 2;
+let hovered = null;
+let activeMenu = null;
+let menuMode = null;
+let submenuMode = null;
+let selectedMenuRoomId = 'studio';
+let selectedInspectorObject = null;
+let depthLookOffsetY = 0;
+let depthZoom = 1;
+let lastMouseX = mx, lastMouseY = my;
+let mouseDy = 0;
+let mouseMoveEnergy = 0;
+let lastMouseMoveAt = performance.now();
+
+const menuDropdown = document.getElementById('menu-dropdown');
+const menuSubmenu = document.getElementById('menu-submenu');
+const menuSubsubmenu = document.getElementById('menu-subsubmenu');
+const menubarItems = Array.from(document.querySelectorAll('.mb-item'));
+
+function closeMenu() {
+  activeMenu = null;
+  menuMode = null;
+  submenuMode = null;
+  menuDropdown.classList.remove('active');
+  menuSubmenu.classList.remove('active');
+  menuSubsubmenu.classList.remove('active');
+  menubarItems.forEach(item => item.classList.remove('active'));
+}
+
+function isMenuClick(target) {
+  return Boolean(target.closest('#menu-dropdown') || target.closest('#menu-submenu') || target.closest('#menu-subsubmenu') || target.closest('.mb-item'));
+}
+
+function getMenuRoom() {
+  return ROOMS.find(r => r.id === selectedMenuRoomId) || ROOMS[0];
+}
+
+function findFilesByName(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const matches = [];
+  for (const obj of OBJECTS) {
+    if (!Array.isArray(obj.files)) continue;
+    for (const file of obj.files) {
+      if (file.name.toLowerCase().includes(q)) {
+        const room = ROOMS.find(r => r.id === obj.room);
+        matches.push({
+          fileName: file.name,
+          roomName: room ? room.name : obj.room,
+          objectLabel: obj.label,
+        });
+      }
+    }
+  }
+  return matches.sort((a, b) => a.fileName.localeCompare(b.fileName));
+}
+
+function renderFindResults(query) {
+  const resultsEl = document.getElementById('find-results');
+  if (!resultsEl) return;
+  const matches = findFilesByName(query);
+  if (!query.trim()) {
+    resultsEl.innerHTML = '<div class="menu-find-empty">type a name to locate a file</div>';
+    return;
+  }
+  if (!matches.length) {
+    resultsEl.innerHTML = `<div class="menu-find-empty">no file matching "${query.trim()}"</div>`;
+    return;
+  }
+  resultsEl.innerHTML = matches.map(match => (
+    `<div class="menu-find-result"><strong>${match.fileName}</strong>room: ${match.roomName}<br>object: ${match.objectLabel}</div>`
+  )).join('');
+}
+
+function renderMenu(menu, anchor) {
+  if (!menu) {
+    closeMenu();
+    return;
+  }
+
+  const fileActions = [
+    { label: 'New file', action: 'new-file' },
+    { label: 'Rename current file', action: 'rename-file' },
+    { label: 'Duplicate current file', action: 'duplicate-file' }
+  ];
+
+  const colorActions = [
+    { label: 'Warm palette', action: 'room-color-warm' },
+    { label: 'Cool palette', action: 'room-color-cool' },
+    { label: 'Pastel palette', action: 'room-color-pastel' },
+    { label: 'Neutral palette', action: 'room-color-neutral' }
+  ];
+
+  menuDropdown.classList.toggle('info-menu', menu === 'info');
+  menuDropdown.classList.toggle('find-menu', menu === 'find');
+
+  if (menu === 'info') {
+    menuDropdown.innerHTML = `<h4>INFO</h4><p class="menu-description">SPACE-OS reimagines file management through speculative design, transforming digital storage into spatial experiences that question how we organize online belongings.</p>`;
+  } else if (menu === 'find') {
+    menuDropdown.innerHTML = `<h4>FIND FILE</h4><p class="menu-find-hint">search by file name</p><input id="find-file-input" class="menu-find-input" type="text" placeholder="e.g. thesis, Massumi, invoice..." maxlength="80" autocomplete="off" /><div id="find-results" class="menu-find-results"><div class="menu-find-empty">type a name to locate a file</div></div>`;
+    const input = menuDropdown.querySelector('#find-file-input');
+    if (input) {
+      setTimeout(() => input.focus(), 0);
+    }
+  } else if (menu === 'edit') {
+    menuDropdown.innerHTML = `<h4>${menu.toUpperCase()} MENU</h4><div class="menu-group"></div>`;
+    const group = menuDropdown.querySelector('.menu-group');
+    const paintOption = document.createElement('div');
+    paintOption.className = 'menu-option';
+    if (menuMode === 'paint-room') paintOption.classList.add('selected');
+    paintOption.textContent = 'Paint room';
+    paintOption.dataset.action = 'paint-room';
+    paintOption.tabIndex = 0;
+    paintOption.role = 'menuitem';
+    group.appendChild(paintOption);
+    const songOption = document.createElement('div');
+    songOption.className = 'menu-option';
+    if (menuMode === 'change-song') songOption.classList.add('selected');
+    songOption.textContent = 'Change song';
+    songOption.dataset.action = 'change-song';
+    songOption.tabIndex = 0;
+    songOption.role = 'menuitem';
+    group.appendChild(songOption);
+  } else {
+    menuDropdown.innerHTML = `<h4>${menu.toUpperCase()} MENU</h4><div class="menu-group"></div>`;
+    const group = menuDropdown.querySelector('.menu-group');
+    fileActions.forEach(item => {
+      const option = document.createElement('div');
+      option.className = 'menu-option';
+      option.textContent = item.label;
+      option.dataset.action = item.action;
+      option.tabIndex = 0;
+      option.role = 'menuitem';
+      group.appendChild(option);
+    });
+  }
+
+  const anchorEl = anchor || menubarItems.find(el => el.textContent.trim().toLowerCase() === menu);
+  const rect = anchorEl ? anchorEl.getBoundingClientRect() : { left: 12, bottom: 36 };
+  menuDropdown.style.left = `${Math.min(Math.max(rect.left, 12), window.innerWidth - menuDropdown.offsetWidth - 12)}px`;
+  menuDropdown.style.top = `${rect.bottom + 4}px`;
+  menuDropdown.classList.add('active');
+}
+
+function renderSubmenu(type, anchor) {
+  const submenu = (type === 'room' || type === 'music') ? menuSubmenu : menuSubsubmenu;
+  submenuMode = type;
+  if (type === 'room') {
+    submenu.innerHTML = `<h4>SELECT ROOM</h4><div class="menu-group"></div>`;
+    const group = submenu.querySelector('.menu-group');
+    ROOMS.forEach(room => {
+      const option = document.createElement('div');
+      option.className = 'menu-option';
+      if (room.id === selectedMenuRoomId) option.classList.add('selected');
+      option.textContent = room.name;
+      option.dataset.action = 'select-room';
+      option.dataset.roomId = room.id;
+      option.tabIndex = 0;
+      option.role = 'menuitem';
+      group.appendChild(option);
+    });
+  } else if (type === 'music') {
+    submenu.innerHTML = `<h4>SELECT SONG</h4><div class="menu-group"></div>`;
+    const group = submenu.querySelector('.menu-group');
+    MUSIC_TRACKS.forEach(track => {
+      const option = document.createElement('div');
+      option.className = 'menu-option';
+      if (track.id === currentSongId) option.classList.add('selected');
+      option.textContent = track.title;
+      option.dataset.action = 'select-song';
+      option.dataset.songId = track.id;
+      option.tabIndex = 0;
+      option.role = 'menuitem';
+      group.appendChild(option);
+    });
+  } else {
+    submenu.innerHTML = `<h4>SELECT COLOR PALETTE</h4><div class="menu-group"></div>`;
+    const group = submenu.querySelector('.menu-group');
+    const colorActions = [
+      { label: 'Warm palette', action: 'room-color-warm' },
+      { label: 'Cool palette', action: 'room-color-cool' },
+      { label: 'Pastel palette', action: 'room-color-pastel' },
+      { label: 'Neutral palette', action: 'room-color-neutral' }
+    ];
+    colorActions.forEach(item => {
+      const option = document.createElement('div');
+      option.className = 'menu-option';
+      option.textContent = item.label;
+      option.dataset.action = item.action;
+      option.tabIndex = 0;
+      option.role = 'menuitem';
+      group.appendChild(option);
+    });
+  }
+  const parent = (type === 'room' || type === 'music') ? menuDropdown : menuSubmenu;
+  const sourceRect = parent.getBoundingClientRect();
+  const leftX = type === 'room' ? sourceRect.right + 4 : sourceRect.right;
+  submenu.style.left = `${Math.min(Math.max(leftX, 12), window.innerWidth - submenu.offsetWidth - 12)}px`;
+  submenu.style.top = `${Math.min(Math.max(sourceRect.top, 12), window.innerHeight - submenu.offsetHeight - 12)}px`;
+  submenu.classList.add('active');
+}
+
+function handleMenuAction(action, roomId, anchor) {
+  if (action === 'paint-room') {
+    menuMode = 'paint-room';
+    renderMenu(activeMenu, document.querySelector('.mb-item.active'));
+    renderSubmenu('room', anchor);
+    return;
+  }
+  if (action === 'change-song') {
+    menuMode = 'change-song';
+    startBackgroundMusic();
+    renderMenu(activeMenu, document.querySelector('.mb-item.active'));
+    renderSubmenu('music', anchor);
+    return;
+  }
+  if (action === 'select-song') {
+    const songId = anchor?.dataset?.songId;
+    if (songId) {
+      startBackgroundMusic();
+      playBgMusic(songId);
+    }
+    menuMode = 'change-song';
+    renderMenu(activeMenu, document.querySelector('.mb-item.active'));
+    renderSubmenu('music', anchor);
+    return;
+  }
+  if (action === 'select-room') {
+    selectedMenuRoomId = roomId || selectedMenuRoomId;
+    renderMenu(activeMenu, document.querySelector('.mb-item.active'));
+    renderSubmenu('color', anchor);
+    return;
+  }
+  if (action === 'new-file') {
+    const room = getCurrentRoom();
+    if (!room) return;
+    const target = OBJECTS.find(o => o.room === room.id && Array.isArray(o.files));
+    if (!target) return;
+    target.files.unshift({ name: `new file — ${room.name.toLowerCase()}`, age: 'now', fresh: 3 });
+    document.getElementById('insp-hover').textContent = `created file in ${room.name}`;
+    return;
+  }
+  if (action === 'rename-file' && selectedInspectorObject && selectedInspectorObject.files?.length) {
+    selectedInspectorObject.files[0].name = `renamed — ${selectedInspectorObject.files[0].name}`;
+    document.getElementById('insp-hover').textContent = `renamed ${selectedInspectorObject.files[0].name}`;
+    renderInspectorObject(selectedInspectorObject);
+    return;
+  }
+  if (action === 'duplicate-file' && selectedInspectorObject && selectedInspectorObject.files?.length) {
+    const file = selectedInspectorObject.files[0];
+    selectedInspectorObject.files.splice(1, 0, { name: `${file.name} copy`, age: 'now', fresh: file.fresh });
+    document.getElementById('insp-hover').textContent = `duplicated ${file.name}`;
+    renderInspectorObject(selectedInspectorObject);
+    return;
+  }
+  if (action.startsWith('room-color-')) {
+    const paletteMap = {
+      'room-color-warm': {
+        floorA: '#fff2d9', floorB: '#ffd7a8', wallCap: '#f7b46f', wallNorthLeft: '#d66f2b', wallNorthRight: '#e68f4f', wallWestLeft: '#b45828', wallWestRight: '#d66f2b', minimap: '#ffbf7a', hud: '#a44b22'
+      },
+      'room-color-cool': {
+        floorA: '#eaf6ff', floorB: '#c8e6ff', wallCap: '#89c1f7', wallNorthLeft: '#3b7ecb', wallNorthRight: '#5a97d9', wallWestLeft: '#3265a6', wallWestRight: '#3b7ecb', minimap: '#7fb6e8', hud: '#1f4a85'
+      },
+      'room-color-pastel': {
+        floorA: '#fff5f8', floorB: '#ffe5ed', wallCap: '#f7c5d2', wallNorthLeft: '#d78ba6', wallNorthRight: '#e6a7bb', wallWestLeft: '#b56982', wallWestRight: '#d78ba6', minimap: '#f5a7bc', hud: '#7a3b58'
+      },
+      'room-color-neutral': {
+        floorA: '#f5f5f5', floorB: '#dcdcdc', wallCap: '#b0b0b0', wallNorthLeft: '#7b7b7b', wallNorthRight: '#9a9a9a', wallWestLeft: '#6a6a6a', wallWestRight: '#7b7b7b', minimap: '#b5b5b5', hud: '#3d3d3d'
+      }
+    };
+    const room = ROOMS.find(r => r.id === selectedMenuRoomId);
+    if (!room) return;
+    const style = ROOM_STYLES[room.id] || ROOM_STYLES.default;
+    Object.assign(style, paletteMap[action]);
+    document.getElementById('insp-hover').textContent = `changed ${room.name} colors`;
+    closeMenu();
+    return;
+  }
+}
+
+function handleMenuClick(item, event) {
+  const menu = item.textContent.trim().toLowerCase();
+  if (activeMenu === menu) {
+    closeMenu();
+    return;
+  }
+  activeMenu = menu;
+  menuMode = null;
+  submenuMode = null;
+  menuSubmenu.classList.remove('active');
+  menuSubsubmenu.classList.remove('active');
+  menubarItems.forEach(el => el.classList.toggle('active', el === item));
+  playSelectionClick();
+  renderMenu(menu, item);
+  event.stopPropagation();
+}
+
+menubarItems.forEach(item => {
+  item.addEventListener('click', e => handleMenuClick(item, e));
+});
+
+menuDropdown.addEventListener('input', e => {
+  if (e.target.id === 'find-file-input') {
+    renderFindResults(e.target.value);
+  }
+});
+
+menuDropdown.addEventListener('keydown', e => {
+  if (e.target.id === 'find-file-input' && e.key === 'Enter') {
+    playSelectionClick();
+    renderFindResults(e.target.value);
+    e.preventDefault();
+  }
+});
+
+menuDropdown.addEventListener('click', e => {
+  const option = e.target.closest('.menu-option');
+  if (!option) return;
+  playSelectionClick();
+  handleMenuAction(option.dataset.action, option.dataset.roomId, option);
+  e.stopPropagation();
+});
+
+menuSubmenu.addEventListener('click', e => {
+  const option = e.target.closest('.menu-option');
+  if (!option) return;
+  playSelectionClick();
+  handleMenuAction(option.dataset.action, option.dataset.roomId, option);
+  e.stopPropagation();
+});
+
+menuSubsubmenu.addEventListener('click', e => {
+  const option = e.target.closest('.menu-option');
+  if (!option) return;
+  playSelectionClick();
+  handleMenuAction(option.dataset.action, option.dataset.roomId, option);
+  e.stopPropagation();
+});
+
+const EDGE_PAN_ZONE = 220;
+const EDGE_PAN_MAX_SPEED = 13;
+const EDGE_PAN_MOTION_DECAY = 0.88;
+const EDGE_PAN_MIN_MOTION = 0.12;
+const DEPTH_LOOK_MAX = 72;
+const DEPTH_LOOK_SMOOTH = 0.09;
+const DEPTH_ZOOM_MAX = 1.48;
+const DEPTH_ZOOM_SMOOTH = 0.09;
+const DEPTH_ZOOM_STEP = 0.002;
+
+function clamp(v, min, max) {
+  return Math.min(max, Math.max(min, v));
+}
+
+function getDepthLookTarget() {
+  // Cursor near top implies looking farther away, so we subtly dolly forward.
+  const t = 1 - clamp(my / canvas.height, 0, 1);
+  return t * DEPTH_LOOK_MAX;
+}
+
+function getDepthZoomTarget() {
+  const t = 1 - clamp(my / canvas.height, 0, 1);
+  return 1 + t * (DEPTH_ZOOM_MAX - 1);
+}
+
+function updateDepthLook() {
+  if (shouldPauseBackgroundPan()) return;
+  const lookTarget = getDepthLookTarget();
+  depthLookOffsetY += (lookTarget - depthLookOffsetY) * DEPTH_LOOK_SMOOTH;
+
+  const zoomTarget = getDepthZoomTarget();
+  depthZoom += (zoomTarget - depthZoom) * DEPTH_ZOOM_SMOOTH;
+  depthZoom = Math.round(depthZoom / DEPTH_ZOOM_STEP) * DEPTH_ZOOM_STEP;
+}
+
+function getEffectiveCamera() {
+  return {
+    camWX: camX,
+    camWY: camY - depthLookOffsetY,
+  };
+}
+
+function worldToScreen(wx, wy) {
+  const {camWX, camWY} = getEffectiveCamera();
+  return {
+    ox: (wx - camWX) + canvas.width/2,
+    oy: (wy - camWY) + canvas.height/2,
+  };
+}
+
+function screenToWorld(screenX, screenY) {
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+  const ux = (screenX - cx) / depthZoom + cx;
+  const uy = (screenY - cy) / depthZoom + cy;
+  const {camWX, camWY} = getEffectiveCamera();
+  return {
+    wx: (ux - canvas.width/2) + camWX,
+    wy: (uy - canvas.height/2) + camWY,
+  };
+}
+
+function edgeVelocity(pos, size) {
+  const leftPressure = EDGE_PAN_ZONE - pos;
+  if (leftPressure > 0) {
+    return -EDGE_PAN_MAX_SPEED * Math.pow(leftPressure / EDGE_PAN_ZONE, 1.35);
+  }
+  const rightPressure = pos - (size - EDGE_PAN_ZONE);
+  if (rightPressure > 0) {
+    return EDGE_PAN_MAX_SPEED * Math.pow(rightPressure / EDGE_PAN_ZONE, 1.35);
+  }
+  return 0;
+}
+
+function isInEdgePanZone() {
+  return (
+    mx <= EDGE_PAN_ZONE ||
+    mx >= canvas.width - EDGE_PAN_ZONE ||
+    my <= EDGE_PAN_ZONE ||
+    my >= canvas.height - EDGE_PAN_ZONE
+  );
+}
+
+const FRAME_TOP    = 24;  // px — matches --frame
+const FRAME_SIDE   = 16;  // px — matches --frame-side
+const FRAME_BOTTOM = 24;
+const MENU_APPROACH_BUFFER = 140;
+
+function getMenuPanExclusionBottom() {
+  let bottom = FRAME_TOP + 72;
+  const menubar = document.getElementById('menubar');
+  if (menubar) {
+    const r = menubar.getBoundingClientRect();
+    bottom = Math.max(bottom, r.bottom + 28);
+  }
+  for (const id of ['menu-dropdown', 'menu-submenu', 'menu-subsubmenu']) {
+    const el = document.getElementById(id);
+    if (el?.classList.contains('active')) {
+      const r = el.getBoundingClientRect();
+      bottom = Math.max(bottom, r.bottom + 24);
+    }
+  }
+  return bottom;
+}
+
+function isMouseNearMenuUI() {
+  return my <= getMenuPanExclusionBottom();
+}
+
+function isMouseApproachingMenu() {
+  const exclusion = getMenuPanExclusionBottom();
+  return mouseDy < 0 && my <= exclusion + MENU_APPROACH_BUFFER;
+}
+
+function shouldPauseBackgroundPan() {
+  if (document.getElementById('inspector').classList.contains('active')) return true;
+  if (activeMenu) return true;
+  if (isMouseNearMenuUI() || isMouseApproachingMenu()) return true;
+  if (my <= FRAME_TOP || my >= canvas.height - FRAME_BOTTOM ||
+      mx <= FRAME_SIDE || mx >= canvas.width - FRAME_SIDE) return true;
+  return false;
+}
+
+function updateCameraFromMouseHover() {
+  if (shouldPauseBackgroundPan()) {
+    mouseMoveEnergy *= 0.55;
+    return;
+  }
+
+  const edgeIntent = isInEdgePanZone();
+
+  // Away from edges, pan only while the cursor is actively moving.
+  if (!edgeIntent) {
+    const idleMs = performance.now() - lastMouseMoveAt;
+    if (idleMs > 120) mouseMoveEnergy *= 0.7;
+    mouseMoveEnergy *= EDGE_PAN_MOTION_DECAY;
+    if (mouseMoveEnergy <= EDGE_PAN_MIN_MOTION) return;
+  }
+
+  const motionScale = edgeIntent
+    ? 1
+    : clamp((mouseMoveEnergy - EDGE_PAN_MIN_MOTION) / (1 - EDGE_PAN_MIN_MOTION), 0, 1);
+
+  camX += edgeVelocity(mx, canvas.width) * motionScale;
+  camY += edgeVelocity(my, canvas.height) * motionScale;
+}
+
+// ════════════════════════════════════════════
+// PIXEL DRAWING HELPERS
+// ════════════════════════════════════════════
+function px(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(
+    Math.round(x * PX), Math.round(y * PX),
+    Math.round((w || 1) * PX), Math.round((h || 1) * PX)
+  );
+}
+
+// Draw an isometric floor tile
+function drawFloorTile(tx, ty, topColor, leftColor, rightColor) {
+  const {sx, sy} = tileToScreen(tx, ty);
+  const {ox, oy} = worldToScreen(sx, sy);
+
+  // top diamond
+  ctx.fillStyle = topColor;
+  ctx.beginPath();
+  ctx.moveTo(Math.round(ox + TWP/2), Math.round(oy));
+  ctx.lineTo(Math.round(ox + TWP),   Math.round(oy + THP/2));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP));
+  ctx.lineTo(Math.round(ox),         Math.round(oy + THP/2));
+  ctx.closePath();
+  ctx.fill();
+
+  // pixel grid lines (subtle)
+  ctx.strokeStyle = topColor === C.floor_a ? C.d2 : C.d1;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// Draw an isometric wall tile (facing west = left face visible)
+function drawWallTileW(tx, ty, h, color) {
+  const {sx, sy} = tileToScreen(tx, ty);
+  const {ox, oy} = worldToScreen(sx, sy);
+  const wallH = h * THP * PX;
+
+  ctx.fillStyle = color;
+  // left face of wall
+  ctx.beginPath();
+  ctx.moveTo(Math.round(ox),         Math.round(oy + THP/2));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP - wallH/PX));
+  ctx.lineTo(Math.round(ox),         Math.round(oy + THP/2 - wallH/PX));
+  ctx.closePath();
+  ctx.fill();
+}
+
+// Draw isometric wall top (cap on walls)
+function drawWallCap(tx, ty, h, color) {
+  const {sx, sy} = tileToScreen(tx, ty);
+  const {ox, oy} = worldToScreen(sx, sy);
+  const wallH = h * THP * PX;
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(Math.round(ox + TWP/2), Math.round(oy - wallH/PX));
+  ctx.lineTo(Math.round(ox + TWP),   Math.round(oy + THP/2 - wallH/PX));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP - wallH/PX));
+  ctx.lineTo(Math.round(ox),         Math.round(oy + THP/2 - wallH/PX));
+  ctx.closePath();
+  ctx.fill();
+}
+
+// Full wall tile: top + left + right face
+function drawWallFull(tx, ty, h, capColor, leftColor, rightColor) {
+  const {sx, sy} = tileToScreen(tx, ty);
+  const {ox, oy} = worldToScreen(sx, sy);
+  const wh = h * THP; // wall height in screen px (not multiplied by PX again — THP already has PX baked)
+
+  // right face
+  ctx.fillStyle = rightColor;
+  ctx.beginPath();
+  ctx.moveTo(Math.round(ox + TWP/2), Math.round(oy + THP));
+  ctx.lineTo(Math.round(ox + TWP),   Math.round(oy + THP/2));
+  ctx.lineTo(Math.round(ox + TWP),   Math.round(oy + THP/2 - wh));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP - wh));
+  ctx.closePath();
+  ctx.fill();
+
+  // left face
+  ctx.fillStyle = leftColor;
+  ctx.beginPath();
+  ctx.moveTo(Math.round(ox),         Math.round(oy + THP/2));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP - wh));
+  ctx.lineTo(Math.round(ox),         Math.round(oy + THP/2 - wh));
+  ctx.closePath();
+  ctx.fill();
+
+  // top cap
+  ctx.fillStyle = capColor;
+  ctx.beginPath();
+  ctx.moveTo(Math.round(ox + TWP/2), Math.round(oy - wh));
+  ctx.lineTo(Math.round(ox + TWP),   Math.round(oy + THP/2 - wh));
+  ctx.lineTo(Math.round(ox + TWP/2), Math.round(oy + THP - wh));
+  ctx.lineTo(Math.round(ox),         Math.round(oy + THP/2 - wh));
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ════════════════════════════════════════════
+// OBJECT RENDERERS (pixel art objects)
+// ════════════════════════════════════════════
+function getScreenPos(obj) {
+  const {sx, sy} = tileToScreen(obj.tx, obj.ty);
+  return worldToScreen(sx, sy);
+}
+
+function drawObject(obj) {
+  const {ox, oy} = getScreenPos(obj);
+  const isHovered = hovered === obj.id;
+
+  switch(obj.type) {
+    case 'pinboard': drawPinboard(ox, oy, isHovered, obj); break;
+    case 'desk':     drawDesk(ox, oy, isHovered, obj); break;
+    case 'trunk':    drawTrunk(ox, oy, isHovered, obj); break;
+    case 'drawer':   drawDrawer(ox, oy, isHovered, obj); break;
+    case 'shelf':    drawShelf(ox, oy, isHovered, obj); break;
+    case 'pile':     drawPile(ox, oy, isHovered, obj); break;
+    case 'trash':    drawTrash(ox, oy, isHovered, obj); break;
+  }
+}
+
+function drawPinboard(ox, oy, hov, obj) {
+  const h = hov ? C.white : C.l3;
+  // frame (upright on wall — drawn flat above floor)
+  const bx = Math.round(ox + TWP*0.2), by = Math.round(oy - THP*0.8);
+  const bw = Math.round(TWP*0.7), bh = Math.round(THP*1.4);
+
+  // frame border
+  ctx.fillStyle = C.d1;
+  ctx.fillRect(bx-2, by-2, bw+4, bh+4);
+  // surface
+  ctx.fillStyle = C.d3;
+  ctx.fillRect(bx, by, bw, bh);
+  // notes — little coloured rectangles
+  const notes = obj.files.length;
+  for (let i=0; i<notes; i++) {
+    const f = obj.files[i];
+    const nx = bx + 3 + (i%2) * Math.round(bw/2 - 2);
+    const ny = by + 3 + Math.floor(i/2) * Math.round(bh/2 - 2);
+    const nw = Math.round(bw/2 - 5);
+    const nh = Math.round(bh/2 - 6);
+    const shade = f.fresh === 3 ? C.white : f.fresh === 2 ? C.m4 : f.fresh === 1 ? C.m2 : C.mid;
+    ctx.fillStyle = shade;
+    ctx.fillRect(nx, ny, nw, nh);
+    // pin dot
+    ctx.fillStyle = C.black;
+    ctx.fillRect(nx + Math.floor(nw/2)-1, ny-1, 2, 2);
+  }
+  // label
+  if (hov) drawLabel(ox + TWP/2, oy + THP * 1.2, obj.label);
+}
+
+function drawDesk(ox, oy, hov, obj) {
+  // Isometric desk: top surface + front face
+  const dw = Math.round(TWP*0.9), dd = Math.round(THP*0.8);
+  const dx = Math.round(ox + TWP*0.05);
+  const dy = Math.round(oy + THP*0.2);
+  const legH = Math.round(THP*0.6);
+
+  // desk top (isometric top face)
+  ctx.fillStyle = hov ? C.l2 : C.m3;
+  ctx.beginPath();
+  ctx.moveTo(dx + dw/2, dy - dd/2);
+  ctx.lineTo(dx + dw,   dy);
+  ctx.lineTo(dx + dw/2, dy + dd/2);
+  ctx.lineTo(dx,        dy);
+  ctx.closePath();
+  ctx.fill();
+
+  // desk front face
+  ctx.fillStyle = C.mid;
+  ctx.fillRect(dx, dy, dw, legH);
+  // front face shadow
+  ctx.fillStyle = C.d2;
+  ctx.fillRect(dx, dy + legH - 2, dw, 2);
+
+  // items on desk — little squares
+  for (let i=0; i<Math.min(obj.files.length, 3); i++) {
+    const f = obj.files[i];
+    const shade = f.fresh === 3 ? C.white : f.fresh === 2 ? C.l2 : C.m4;
+    ctx.fillStyle = shade;
+    ctx.fillRect(Math.round(dx + 4 + i*10), Math.round(dy - dd/3), 7, 5);
+  }
+  if (hov) drawLabel(ox + TWP/2, oy + THP * 1.6, obj.label);
+}
+
+function drawTrunk(ox, oy, hov, obj) {
+  const tw = Math.round(TWP*0.85), td = Math.round(THP*0.7);
+  const tx = Math.round(ox + TWP*0.07);
+  const ty = Math.round(oy + THP*0.3);
+  const bodyH = Math.round(THP*0.55);
+  const lidH  = Math.round(THP*0.28);
+
+  // body left face
+  ctx.fillStyle = C.d2;
+  ctx.fillRect(tx, ty + td/2, tw/2, bodyH);
+
+  // body right face
+  ctx.fillStyle = C.d1;
+  ctx.fillRect(tx + tw/2, ty + td/2, tw/2, bodyH);
+
+  // body top face
+  ctx.fillStyle = hov ? C.mid : C.d3;
+  ctx.beginPath();
+  ctx.moveTo(tx + tw/2, ty);
+  ctx.lineTo(tx + tw,   ty + td/2);
+  ctx.lineTo(tx + tw/2, ty + td);
+  ctx.lineTo(tx,        ty + td/2);
+  ctx.closePath();
+  ctx.fill();
+
+  // lid (slight overhang)
+  const ly = ty - lidH;
+  ctx.fillStyle = C.d1;
+  ctx.fillRect(tx - 1, ly + td/2, tw/2+1, lidH+1);
+  ctx.fillStyle = C.d3;
+  ctx.fillRect(tx + tw/2, ly + td/2, tw/2+1, lidH+1);
+  ctx.fillStyle = hov ? C.m2 : C.mid;
+  ctx.beginPath();
+  ctx.moveTo(tx + tw/2, ly);
+  ctx.lineTo(tx + tw+1, ly + td/2);
+  ctx.lineTo(tx + tw/2, ly + td);
+  ctx.lineTo(tx - 1,    ly + td/2);
+  ctx.closePath();
+  ctx.fill();
+
+  // latch
+  ctx.fillStyle = C.m3;
+  ctx.fillRect(Math.round(tx + tw/2 - 3), Math.round(ly + td/2 + 1), 6, 4);
+
+  // straps
+  ctx.strokeStyle = C.d4;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tx + tw*0.25, ly + td/2);
+  ctx.lineTo(tx + tw*0.25, ty + td/2 + bodyH);
+  ctx.moveTo(tx + tw*0.75, ly + td/2);
+  ctx.lineTo(tx + tw*0.75, ty + td/2 + bodyH);
+  ctx.stroke();
+
+  if (hov) drawLabel(ox + TWP/2, oy + THP * 1.6, obj.label);
+}
+
+function drawDrawer(ox, oy, hov, obj) {
+  const dw = Math.round(TWP*0.7), dd = Math.round(THP*0.6);
+  const dx = Math.round(ox + TWP*0.15);
+  const dy = Math.round(oy + THP*0.2);
+  const units = 3;
+  const unitH = Math.round(THP*0.45);
+
+  // cabinet body
+  ctx.fillStyle = C.d2;
+  ctx.fillRect(dx, dy + dd/2, dw/2, unitH * units);
+  ctx.fillStyle = C.d1;
+  ctx.fillRect(dx + dw/2, dy + dd/2, dw/2, unitH * units);
+  // top
+  ctx.fillStyle = hov ? C.m2 : C.mid;
+  ctx.beginPath();
+  ctx.moveTo(dx + dw/2, dy);
+  ctx.lineTo(dx + dw,   dy + dd/2);
+  ctx.lineTo(dx + dw/2, dy + dd);
+  ctx.lineTo(dx,        dy + dd/2);
+  ctx.closePath();
+  ctx.fill();
+
+  // drawer slots
+  for (let i=0; i<units; i++) {
+    const sy2 = dy + dd/2 + i*unitH + 2;
+    ctx.fillStyle = C.d3;
+    ctx.fillRect(dx + 2, sy2, dw/2 - 4, unitH - 4);
+    // handle
+    ctx.fillStyle = C.m3;
+    ctx.fillRect(Math.round(dx + dw/4 - 3), Math.round(sy2 + unitH/2 - 2), 6, 3);
+  }
+  if (hov) drawLabel(ox + TWP/2, oy + THP * 1.6, obj.label);
+}
+
+function drawShelf(ox, oy, hov, obj) {
+  const sw = Math.round(TWP*0.3), sh = Math.round(THP*1.8);
+  const sx2 = Math.round(ox + TWP*0.1);
+  const sy2 = Math.round(oy - THP*0.5);
+
+  // shelf unit back
+  ctx.fillStyle = C.d2;
+  ctx.fillRect(sx2, sy2, sw, sh);
+  // books
+  const colors = [C.m3, C.m2, C.mid, C.m4, C.m3, C.m2];
+  const heights = [18, 14, 20, 12, 16, 18];
+  let bx = sx2 + 2;
+  for (let i=0; i<Math.min(obj.files.length+2, 6); i++) {
+    ctx.fillStyle = hov ? C.l2 : colors[i%colors.length];
+    ctx.fillRect(bx, sy2 + sh - heights[i] - 2, 4, heights[i]);
+    bx += 5;
+  }
+  if (hov) drawLabel(ox + TWP/2, oy + THP * 1.2, obj.label);
+}
+
+function drawPile(ox, oy, hov, obj) {
+  // scattered papers on floor
+  const papers = obj.files.length;
+  for (let i=0; i<papers; i++) {
+    const angle = (i / papers) * Math.PI * 0.5 - 0.2;
+    const px2 = Math.round(ox + TWP*0.3 + i * 5);
+    const py2 = Math.round(oy + THP*0.5 - i * 2);
+    const pw = 16 + (i%2)*6, ph = 12 + (i%3)*3;
+    ctx.save();
+    ctx.translate(px2 + pw/2, py2 + ph/2);
+    ctx.rotate(angle * 0.3 - 0.1 + i*0.05);
+    const fresh = obj.files[i].fresh;
+    ctx.fillStyle = hov ? C.l2 : fresh === 2 ? C.m4 : fresh === 1 ? C.m3 : C.mid;
+    ctx.fillRect(-pw/2, -ph/2, pw, ph);
+    // lines on paper
+    ctx.fillStyle = C.d2;
+    ctx.fillRect(-pw/2+2, -ph/2+3, pw-4, 1);
+    ctx.fillRect(-pw/2+2, -ph/2+6, pw-6, 1);
+    ctx.restore();
+  }
+  if (hov) drawLabel(ox + TWP/2, oy + THP * 1.4, obj.label);
+}
+
+function drawTrash(ox, oy, hov, obj) {
+  // simple trash bin — isometric 3D rectangle
+  const binW = TWP * 0.6;
+  const binH = THP * 1.2;
+  const binD = THP * 0.4;
+
+  // back face (dim)
+  ctx.fillStyle = hov ? C.m3 : C.d2;
+  ctx.fillRect(Math.round(ox - binW/2), Math.round(oy - binH/2 - binD/2), Math.round(binW), Math.round(binH));
+
+  // lid (slightly raised)
+  ctx.fillStyle = hov ? C.m4 : C.d3;
+  const lidW = binW * 0.9;
+  const lidH = binH * 0.15;
+  ctx.fillRect(Math.round(ox - lidW/2), Math.round(oy - binH/2 - binD - 4), Math.round(lidW), Math.round(lidH));
+
+  // front face highlight
+  ctx.fillStyle = hov ? C.m3 : C.d4;
+  ctx.fillRect(Math.round(ox - binW/2 + 2), Math.round(oy - binH/2), Math.round(binW - 4), Math.round(binH * 0.3));
+
+  // count badge
+  if (obj.files && obj.files.length > 0) {
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(Math.round(ox + binW/2 - 12), Math.round(oy - binH/2 - 8), 16, 16);
+    ctx.fillStyle = C.white;
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(obj.files.length), Math.round(ox + binW/2 - 4), Math.round(oy - binH/2));
+  }
+
+  if (hov) drawLabel(ox, oy + THP * 0.8, obj.label);
+}
+
+function drawLabel(x, y, text) {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.84)';
+  const w = text.length * 5 + 10;
+  ctx.fillRect(Math.round(x - w/2), Math.round(y - 6), w, 12);
+  ctx.fillStyle = C.white;
+  ctx.font = '9px "MS Sans Serif", "Microsoft Sans Serif", "Tahoma", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(text.toUpperCase(), Math.round(x), Math.round(y + 3));
+}
+
+// ════════════════════════════════════════════
+// HIT TESTING
+// ════════════════════════════════════════════
+function objectHitRadius(obj) {
+  return { cx: obj.tx + 0.5, cy: obj.ty + 0.5, r: 1.8 };
+}
+
+function getHoveredObject(screenX, screenY) {
+  // Convert screen → world-iso coords
+  const {wx, wy} = screenToWorld(screenX, screenY);
+  const {tx, ty} = screenToTile(wx, wy);
+
+  let closest = null, closestDist = 2.5;
+  for (const obj of OBJECTS) {
+    const dist = Math.hypot(obj.tx - tx, obj.ty - ty);
+    if (dist < closestDist) { closestDist = dist; closest = obj.id; }
+  }
+  return closest;
+}
+
+// ════════════════════════════════════════════
+// CURRENT ROOM DETECTION
+// ════════════════════════════════════════════
+function getCurrentRoom() {
+  // Primary reading is the tile under cursor; fallback to camera centre.
+  const {wx, wy} = screenToWorld(mx, my);
+  const mouseTile = screenToTile(wx, wy);
+
+  for (const r of ROOMS) {
+    if (mouseTile.tx >= r.tx && mouseTile.tx < r.tx+r.tw && mouseTile.ty >= r.ty && mouseTile.ty < r.ty+r.th) {
+      return r;
+    }
+  }
+
+  const center = screenToWorld(canvas.width/2, canvas.height/2);
+  const centerTile = screenToTile(center.wx, center.wy);
+  for (const r of ROOMS) {
+    if (centerTile.tx >= r.tx && centerTile.tx < r.tx+r.tw && centerTile.ty >= r.ty && centerTile.ty < r.ty+r.th) {
+      return r;
+    }
+  }
+
+  return null;
+}
+
+// ════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════
+function isInRoom(tx, ty) {
+  for (const r of ROOMS) {
+    if (tx >= r.tx && tx < r.tx+r.tw && ty >= r.ty && ty < r.ty+r.th) return r;
+  }
+  // check doors
+  for (const d of DOORS) {
+    if (tx >= d.x && tx < d.x+d.w && ty >= d.y && ty < d.y+d.h) return { id:'door', wallH:0 };
+  }
+  return null;
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Apply a whole-world zoom transform to keep tile geometry coherent.
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(depthZoom, depthZoom);
+  ctx.translate(-cx, -cy);
+
+  // Draw tiles back-to-front (painter's algorithm: low tx+ty first... actually iso order is ty ascending, then tx ascending)
+  for (let ty=0; ty<WORLD_H; ty++) {
+    for (let tx=0; tx<WORLD_W; tx++) {
+      const room = isInRoom(tx, ty);
+      if (!room) continue;
+
+      // Checkerboard floor
+      const style = ROOM_STYLES[room.id] || ROOM_STYLES.default;
+      const even = (tx + ty) % 2 === 0;
+      const floorCol = even ? style.floorA : style.floorB;
+      drawFloorTile(tx, ty, floorCol, C.d2, C.d1);
+    }
+  }
+
+  // Draw walls (back walls first = low ty)
+  for (let ty=0; ty<WORLD_H; ty++) {
+    for (let tx=0; tx<WORLD_W; tx++) {
+      const room = isInRoom(tx, ty);
+      if (!room || room.id === 'door' || room.wallH === 0) continue;
+
+      const northFree = !isInRoom(tx, ty-1);
+      const westFree  = !isInRoom(tx-1, ty);
+      const style = ROOM_STYLES[room.id] || ROOM_STYLES.default;
+
+      if (northFree) {
+        // north wall
+        drawWallFull(tx, ty, room.wallH, style.wallCap, style.wallNorthLeft, style.wallNorthRight);
+      }
+      if (westFree) {
+        // west wall - draw slightly darker
+        drawWallFull(tx, ty, room.wallH, style.wallCap, style.wallWestLeft, style.wallWestRight);
+      }
+    }
+  }
+
+  // Draw objects (sorted by ty+tx for correct occlusion)
+  const sortedObjs = [...OBJECTS].sort((a,b) => (a.tx+a.ty) - (b.tx+b.ty));
+  for (const obj of sortedObjs) {
+    drawObject(obj);
+  }
+
+  // ── Vignette ──
+  const depthLift = clamp(depthLookOffsetY / DEPTH_LOOK_MAX, 0, 1);
+  const horizonY = canvas.height/2 - depthLift * 52;
+  const vg = ctx.createRadialGradient(
+    canvas.width/2, horizonY, canvas.height*0.2,
+    canvas.width/2, horizonY, canvas.height*0.85
+  );
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(26,55,130,0.16)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Extra atmosphere cue for depth without rescaling world pixels.
+  if (depthLift > 0.01) {
+    const haze = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    haze.addColorStop(0, `rgba(248, 252, 255, ${0.08 * depthLift})`);
+    haze.addColorStop(0.45, 'rgba(248, 252, 255, 0)');
+    haze.addColorStop(1, `rgba(18, 42, 110, ${0.14 * depthLift})`);
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  ctx.restore();
+
+  // ── HUD update ──
+  const room = getCurrentRoom();
+  const roomStyle = ROOM_STYLES[room?.id] || ROOM_STYLES.default;
+  const hudRoomEl = document.getElementById('hud-room');
+  const hudFilesEl = document.getElementById('hud-files');
+  hudRoomEl.textContent = room ? room.name : '—';
+  hudRoomEl.style.color = roomStyle.hud;
+  const objectCount = room
+    ? OBJECTS.filter(o => o.room === room.id).length
+    : 0;
+  hudFilesEl.textContent = `objects: ${objectCount}`;
+  hudFilesEl.style.color = roomStyle.hud;
+  const centerWorld = screenToWorld(canvas.width/2, canvas.height/2);
+  const {tx, ty} = screenToTile(centerWorld.wx, centerWorld.wy);
+  document.getElementById('hud-coords').textContent = `${Math.round(tx)},${Math.round(ty)}`;
+
+  // ── Minimap ──
+  drawMinimap();
+}
+
+// ════════════════════════════════════════════
+// MINIMAP
+// ════════════════════════════════════════════
+function drawMinimap() {
+  const mc = document.getElementById('minimap');
+  const mm = mc.getContext('2d');
+  mm.clearRect(0,0,mc.width,mc.height);
+  mm.fillStyle = '#ffffff';
+  mm.fillRect(0,0,mc.width,mc.height);
+
+  // border
+  mm.strokeStyle = '#000000';
+  mm.lineWidth = 1;
+  mm.strokeRect(0,0,mc.width,mc.height);
+
+  const scaleX = mc.width / WORLD_W;
+  const scaleY = mc.height / WORLD_H;
+
+  // rooms
+  for (const r of ROOMS) {
+    const style = ROOM_STYLES[r.id] || ROOM_STYLES.default;
+    mm.fillStyle = style.minimap;
+    mm.fillRect(r.tx*scaleX, r.ty*scaleY, r.tw*scaleX, r.th*scaleY);
+    mm.strokeStyle = '#000000';
+    mm.lineWidth = 0.5;
+    mm.strokeRect(r.tx*scaleX, r.ty*scaleY, r.tw*scaleX, r.th*scaleY);
+  }
+
+  // objects
+  for (const obj of OBJECTS) {
+    mm.fillStyle = '#000000';
+    mm.fillRect(obj.tx*scaleX-1, obj.ty*scaleY-1, 2, 2);
+  }
+
+  // camera position
+  const centerWorld = screenToWorld(canvas.width/2, canvas.height/2);
+  const {tx, ty} = screenToTile(centerWorld.wx, centerWorld.wy);
+  mm.fillStyle = '#000000';
+  mm.fillRect(tx*scaleX-2, ty*scaleY-2, 4, 4);
+
+  // labels
+  mm.fillStyle = '#000000';
+  mm.font = '6px monospace';
+  mm.textAlign = 'left';
+  for (const r of ROOMS) {
+    mm.fillText(r.name.split(' ')[1] || r.name, r.tx*scaleX+2, r.ty*scaleY+7);
+  }
+}
+
+// ════════════════════════════════════════════
+// PIXEL CURSOR
+// ════════════════════════════════════════════
+const cursorEl = document.getElementById('cursor');
+const cursorCanvas = cursorEl.querySelector('canvas');
+const cc = cursorCanvas.getContext('2d');
+cc.imageSmoothingEnabled = false;
+
+function drawCursor(isHover) {
+  cc.clearRect(0,0,12,12);
+  if (isHover) {
+    // crosshair style when hovering object
+    cc.fillStyle = '#fff';
+    cc.fillRect(5,0,2,4);
+    cc.fillRect(5,8,2,4);
+    cc.fillRect(0,5,4,2);
+    cc.fillRect(8,5,4,2);
+    cc.fillStyle = '#000';
+    cc.fillRect(5,1,2,3);
+    cc.fillRect(5,8,2,3);
+    cc.fillRect(1,5,3,2);
+    cc.fillRect(8,5,3,2);
+  } else {
+    // arrow cursor
+    cc.fillStyle = '#fff';
+    cc.fillRect(1,1,2,8);
+    cc.fillRect(3,3,2,4);
+    cc.fillRect(5,5,2,2);
+    cc.fillRect(2,1,6,2);
+  }
+}
+drawCursor(false);
+
+document.addEventListener('mousemove', e => {
+  cursorEl.style.left = (e.clientX - 6) + 'px';
+  cursorEl.style.top  = (e.clientY - 6) + 'px';
+
+  const dx = e.clientX - lastMouseX;
+  const dy = e.clientY - lastMouseY;
+  mouseDy = dy;
+  const movement = Math.hypot(dx, dy);
+  const motionInput = clamp(movement / 14, 0, 1);
+  mouseMoveEnergy = Math.max(mouseMoveEnergy * 0.6, motionInput);
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+  lastMouseMoveAt = performance.now();
+
+  mx = e.clientX; my = e.clientY;
+
+  hovered = getHoveredObject(e.clientX, e.clientY);
+  drawCursor(!!hovered);
+});
+
+document.addEventListener('mouseleave', () => {
+  mx = canvas.width / 2;
+  my = canvas.height / 2;
+  lastMouseX = mx;
+  lastMouseY = my;
+  mouseMoveEnergy = 0;
+  hovered = null;
+  drawCursor(false);
+});
+
+// ════════════════════════════════════════════
+// INPUT
+// ════════════════════════════════════════════
+document.addEventListener('click', e => {
+  if (isMenuClick(e.target)) return;
+  closeMenu();
+  if (document.getElementById('inspector').classList.contains('active')) return;
+  const objId = getHoveredObject(e.clientX, e.clientY);
+  const obj = OBJECTS.find(o => o.id === objId);
+  if (obj) {
+    playSelectionClick();
+    openInspector(obj);
+  }
+});
+
+// Touch support
+document.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  dragging = true;
+  dragStartX = t.clientX; dragStartY = t.clientY;
+  camStartX = camX; camStartY = camY;
+  dragDist = 0;
+});
+document.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const dx = t.clientX - dragStartX;
+  const dy = t.clientY - dragStartY;
+  dragDist = Math.hypot(dx,dy);
+  camX = camStartX - dx;
+  camY = camStartY - dy;
+}, {passive:false});
+document.addEventListener('touchend', () => { dragging = false; });
+
+// ════════════════════════════════════════════
+// INSPECTOR
+// ════════════════════════════════════════════
+const inspCanvas = document.getElementById('insp-canvas');
+const inspCtx = inspCanvas.getContext('2d');
+inspCtx.imageSmoothingEnabled = false;
+let inspHotspots = [];
+let inspSections = [];
+let selectedInspectorSection = null;
+let inspViewScale = 1;
+let inspPivotX = 0;
+let inspPivotY = 0;
+let selectedInspectorFile = null;
+let selectedInspectorFileIndex = -1;
+const FILE_SELECT_BORDER = '#44aaff';
+
+const READABLE_FILES = {
+  'study-desk': {
+    'annotation notes': {
+      title: 'annotation notes',
+      body: `p. 4 — "space is not empty; it holds habit."
+
+desk faces the window. folders drift left when unread.
+
+Massumi — reread section on intensity (yellow stickies in margin).
+
+if the desktop is a room, where do deleted files go?
+
+todo: map downloads to hall, drafts to studio before crit.`,
+    },
+  },
+};
+
+function getReadableEntry(objectId, fileName) {
+  const shelf = READABLE_FILES[objectId];
+  if (!shelf || !fileName) return null;
+  return shelf[fileName] || shelf[fileName.toLowerCase()] || null;
+}
+
+function closeFileReader() {
+  const reader = document.getElementById('insp-reader');
+  if (reader) reader.classList.remove('active');
+}
+
+function openFileReader(entry) {
+  const reader = document.getElementById('insp-reader');
+  const titleEl = document.getElementById('insp-reader-title');
+  const bodyEl = document.getElementById('insp-reader-body');
+  if (!reader || !titleEl || !bodyEl) return;
+  titleEl.textContent = entry.title;
+  bodyEl.textContent = entry.body;
+  reader.classList.add('active');
+  document.getElementById('insp-hover').textContent = `reading: ${entry.title}`;
+}
+
+function fileTone(fresh) {
+  return fresh === 3 ? '#ffffff' : fresh === 2 ? '#d0d0d0' : fresh === 1 ? '#888888' : '#444444';
+}
+
+function addHotspot(x, y, w, h, label, type = 'file', meta = null) {
+  const tx = inspPivotX + (x - inspPivotX) * inspViewScale;
+  const ty = inspPivotY + (y - inspPivotY) * inspViewScale;
+  inspHotspots.push({
+    x: tx,
+    y: ty,
+    w: w * inspViewScale,
+    h: h * inspViewScale,
+    fileName: label,
+    type,
+    meta,
+  });
+}
+
+function seededRandom(seed, index) {
+  let h = 0;
+  const s = `${seed}:${index}`;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  }
+  return (h % 1000) / 999;
+}
+
+function partitionFiles(files, count) {
+  const groups = Array.from({ length: count }, () => []);
+  files.forEach((file, index) => {
+    groups[index % count].push(file);
+  });
+  return groups;
+}
+
+function fileHotspotMeta(file, fileIndex) {
+  return { file, fileIndex };
+}
+
+function selectInspectorFile(file, fileIndex) {
+  selectedInspectorFile = file;
+  selectedInspectorFileIndex = fileIndex;
+}
+
+function clearInspectorFileSelection() {
+  selectedInspectorFile = null;
+  selectedInspectorFileIndex = -1;
+}
+
+function isInspectorFileSelected(f) {
+  if (!selectedInspectorObject || !selectedInspectorFile) return false;
+  if (selectedInspectorFileIndex >= 0) {
+    const idx = selectedInspectorObject.files.indexOf(f);
+    return idx === selectedInspectorFileIndex;
+  }
+  return selectedInspectorFile === f;
+}
+
+function drawViewerPaperSelected(x, y, w, h, fill, line, f) {
+  drawViewerPaper(x, y, w, h, fill, line);
+  if (isInspectorFileSelected(f)) {
+    inspCtx.strokeStyle = FILE_SELECT_BORDER;
+    inspCtx.lineWidth = 2.5;
+    inspCtx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+  }
+}
+
+function renderInspectorObject(obj, keepSelection = false) {
+  inspHotspots = [];
+  inspSections = [];
+  if (!keepSelection) {
+    selectedInspectorSection = null;
+    clearInspectorFileSelection();
+  } else if (selectedInspectorFileIndex >= 0 && selectedInspectorObject?.files) {
+    const stillThere = selectedInspectorObject.files[selectedInspectorFileIndex];
+    if (stillThere !== selectedInspectorFile) {
+      const idx = selectedInspectorObject.files.indexOf(selectedInspectorFile);
+      selectedInspectorFileIndex = idx;
+    }
+  }
+  drawInspectorScene(obj);
+  const hoverEl = document.getElementById('insp-hover');
+  if (keepSelection && selectedInspectorFile) {
+    hoverEl.textContent = `selected: ${selectedInspectorFile.name}`;
+  } else {
+    hoverEl.textContent = 'hover a file...';
+  }
+  updateInspectorActions(obj);
+}
+
+function updateInspectorActions(obj) {
+  const actions = document.getElementById('insp-actions');
+  const nameInput = document.getElementById('insp-file-name');
+  const trashPin = document.getElementById('insp-trash-pin');
+  if (!actions || !nameInput) return;
+  if (obj && obj.id === 'studio-desk') {
+    actions.style.display = 'flex';
+    nameInput.value = '';
+    nameInput.placeholder = 'new-file.txt';
+  } else {
+    actions.style.display = 'none';
+  }
+  if (trashPin) {
+    const showPin = obj && obj.type !== 'trash';
+    trashPin.style.display = showPin ? 'flex' : 'none';
+    const canTrash = !!(showPin && selectedInspectorFile && obj.files?.length);
+    trashPin.classList.toggle('ready', canTrash);
+    trashPin.disabled = !canTrash;
+  }
+}
+
+function createInspectorFile() {
+  if (!selectedInspectorObject || selectedInspectorObject.id !== 'studio-desk') return;
+  const input = document.getElementById('insp-file-name');
+  if (!input) return;
+  let name = input.value.trim() || 'untitled.txt';
+  if (!name.toLowerCase().endsWith('.txt')) {
+    name += '.txt';
+  }
+  selectedInspectorObject.files.unshift({ name, age: 'now', fresh: 3 });
+  document.getElementById('insp-hover').textContent = `created ${name}`;
+  renderInspectorObject(selectedInspectorObject, true);
+}
+
+function takeSelectedFileToTrash() {
+  if (!selectedInspectorFile || !selectedInspectorObject || !selectedInspectorObject.files) return;
+  const files = selectedInspectorObject.files;
+  let idx = selectedInspectorFileIndex;
+  if (idx < 0 || idx >= files.length || files[idx] !== selectedInspectorFile) {
+    idx = files.indexOf(selectedInspectorFile);
+  }
+  if (idx === -1) {
+    document.getElementById('insp-hover').textContent = 'file not found';
+    return;
+  }
+  const removed = files.splice(idx, 1)[0];
+  playSelectionClick();
+  // Add to trash object
+  const trashObj = OBJECTS.find(o => o.id === 'studio-trash');
+  if (trashObj) {
+    trashObj.files.push(removed);
+  }
+  document.getElementById('insp-hover').textContent = `moved to trash: ${removed.name}`;
+  clearInspectorFileSelection();
+  document.getElementById('insp-sub').textContent =
+    selectedInspectorObject.type.toUpperCase() + ' — ' + selectedInspectorObject.files.length + ' items';
+  renderInspectorObject(selectedInspectorObject, true);
+}
+
+function selectInspectorSection(sectionLabel) {
+  selectedInspectorSection = sectionLabel;
+  renderInspectorObject(selectedInspectorObject, true);
+  document.getElementById('insp-sub').textContent =
+    selectedInspectorObject.type.toUpperCase() + ' — ' + selectedInspectorObject.files.length + ' items' +
+    ' • ' + sectionLabel;
+}
+
+function drawViewerPaper(x, y, w, h, fill, line) {
+  inspCtx.fillStyle = fill;
+  inspCtx.fillRect(x, y, w, h);
+  inspCtx.fillStyle = line;
+  inspCtx.fillRect(x + 2, y + 3, Math.max(2, w - 4), 1);
+  inspCtx.fillRect(x + 2, y + 6, Math.max(2, w - 6), 1);
+}
+
+function drawInspectorScene(obj) {
+  const w = inspCanvas.width;
+  const h = inspCanvas.height;
+  const innerPad = 4;
+  const innerX = innerPad;
+  const innerY = innerPad;
+  const innerW = w - innerPad * 2;
+  const innerH = h - innerPad * 2;
+  inspCtx.clearRect(0, 0, w, h);
+
+  if (obj.type === 'trash') {
+    inspCtx.fillStyle = '#ffffff';
+    inspCtx.fillRect(0, 0, w, h);
+    inspCtx.fillStyle = '#b5b5b5';
+    inspCtx.fillRect(innerX, innerY, innerW, innerH);
+  } else {
+    inspCtx.fillStyle = '#ffffff';
+    inspCtx.fillRect(0, 0, w, h);
+  }
+  inspCtx.strokeStyle = '#000000';
+  inspCtx.lineWidth = 2;
+  inspCtx.strokeRect(innerX, innerY, innerW, innerH);
+
+  const files = obj.files || [];
+  const maxFiles = Math.min(files.length, 10);
+  const typeScale = {
+    shelf: 1.42,
+    pinboard: 1.34,
+    desk: 1.36,
+    pile: 1.28,
+    trunk: 1.3,
+    drawer: 1.3,
+    trash: 1.28,
+  };
+  inspViewScale = obj.type === 'trash' ? 1 : (typeScale[obj.type] || 1.3);
+  inspPivotX = Math.round(w / 2);
+  inspPivotY = Math.round(h * 0.74);
+
+  const useSceneTransform = obj.type !== 'trash';
+  if (useSceneTransform) {
+    inspCtx.save();
+    inspCtx.translate(inspPivotX, inspPivotY);
+    inspCtx.scale(inspViewScale, inspViewScale);
+    inspCtx.translate(-inspPivotX, -inspPivotY);
+  }
+
+  if (obj.type === 'trash') {
+    const filePad = 14;
+    const binX = innerX + filePad;
+    const binY = innerY + filePad;
+    const binW = innerW - filePad * 2;
+    const binH = innerH - filePad * 2;
+    const pw = 30;
+    const ph = 16;
+
+    const placed = [];
+    for (let i = 0; i < maxFiles; i++) {
+      const f = files[i];
+      let attempt = 0;
+      let px3, py3;
+      do {
+        const rx = seededRandom(obj.id, i + attempt * 0.13);
+        const ry = seededRandom(obj.id, i + 37 + attempt * 0.17);
+        px3 = binX + Math.floor(rx * (binW - pw));
+        py3 = binY + Math.floor(ry * (binH - ph));
+        attempt++;
+        let coll = false;
+        for (let r = 0; r < placed.length; r++) {
+          const p = placed[r];
+          if (!(px3 + pw < p.x || px3 > p.x + p.w || py3 + ph < p.y || py3 > p.y + p.h)) {
+            coll = true;
+            break;
+          }
+        }
+        if (!coll) break;
+      } while (attempt < 8);
+
+      placed.push({ x: px3, y: py3, w: pw, h: ph });
+      drawViewerPaperSelected(px3, py3, pw, ph, fileTone(f.fresh), '#000000', f);
+      addHotspot(px3, py3, pw, ph, f.name, 'file', fileHotspotMeta(f, i));
+    }
+  } else if (obj.type === 'shelf') {
+    const shelfX = 82;
+    const shelfY = 60;
+    const shelfW = 156;
+    const shelfH = 172;
+
+    inspCtx.fillStyle = '#ffffff';
+    inspCtx.fillRect(shelfX, shelfY, shelfW, shelfH);
+    inspCtx.strokeStyle = '#000000';
+    inspCtx.lineWidth = 2;
+    inspCtx.strokeRect(shelfX, shelfY, shelfW, shelfH);
+
+    const rows = 4;
+    const rowH = Math.floor((shelfH - 24) / rows);
+    const sections = partitionFiles(files, rows);
+
+    for (let i = 0; i < rows; i++) {
+      const sectionLabel = `row ${i + 1}`;
+      const rowY = shelfY + 10 + i * rowH;
+      const rowHeight = rowH - 8;
+      const sectionX = shelfX;
+      const sectionW = shelfW;
+      inspCtx.lineWidth = 1.5;
+      inspCtx.strokeRect(sectionX, rowY, sectionW, rowHeight);
+
+      addHotspot(sectionX, rowY, sectionW, rowHeight, sectionLabel, 'section', sectionLabel);
+      if (selectedInspectorSection === sectionLabel) {
+        inspCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        inspCtx.fillRect(sectionX, rowY, sectionW, rowHeight);
+      }
+
+      const shelfFiles = sections[i];
+      shelfFiles.forEach((f, j) => {
+        const px = sectionX + 8 + (j % 4) * 34;
+        const py = rowY + 8 + Math.floor(j / 4) * 22;
+        drawViewerPaperSelected(px, py, 24, 14, fileTone(f.fresh), '#000000', f);
+        const fileIndex = files.indexOf(f);
+        addHotspot(px, py, 24, 14, f.name, 'file', fileHotspotMeta(f, fileIndex));
+      });
+    }
+  } else if (obj.type === 'desk') {
+    // Mirror the in-world desk: isometric top plane + front body and side supports.
+    const cx = 222;
+    const topY = 136;
+    const halfW = 104;
+    const halfD = 34;
+    const bodyH = 40;
+
+    // top face (diamond)
+    inspCtx.fillStyle = '#f0f0f0';
+    inspCtx.beginPath();
+    inspCtx.moveTo(cx, topY - halfD);
+    inspCtx.lineTo(cx + halfW, topY);
+    inspCtx.lineTo(cx, topY + halfD);
+    inspCtx.lineTo(cx - halfW, topY);
+    inspCtx.closePath();
+    inspCtx.fill();
+
+    // front body
+    inspCtx.fillStyle = '#aaaaaa';
+    inspCtx.fillRect(cx - halfW, topY, halfW * 2, bodyH);
+    inspCtx.fillStyle = '#000000';
+    inspCtx.fillRect(cx - halfW, topY + bodyH - 5, halfW * 2, 5);
+
+    // side supports / legs
+    inspCtx.fillStyle = '#888888';
+    inspCtx.fillRect(cx - halfW + 10, topY + 8, 26, 60);
+    inspCtx.fillRect(cx + halfW - 36, topY + 8, 26, 60);
+
+    // papers on top aligned to desk plane
+    for (let i = 0; i < maxFiles; i++) {
+      const f = files[i];
+      const row = Math.floor(i / 3);
+      const col = i % 3;
+      const px3 = cx - 58 + col * 42 + row * 8;
+      const py3 = topY - 22 + row * 12 + col * 2;
+      drawViewerPaperSelected(px3, py3, 30, 14, fileTone(f.fresh), '#000000', f);
+      addHotspot(px3, py3, 30, 14, f.name, 'file', fileHotspotMeta(f, i));
+    }
+  } else if (obj.type === 'pile') {
+    // Spread pile files across the popup rectangle with simple overlap avoidance
+    const pileX = 56;
+    const pileY = 62;
+    const pileW = 208;
+    const pileH = 150;
+    const pw = 30;
+    const ph = 16;
+
+    const placed = [];
+    for (let i = 0; i < maxFiles; i++) {
+      const f = files[i];
+      let attempt = 0;
+      let px3, py3;
+      do {
+        const rx = seededRandom(obj.id, i + attempt * 0.13);
+        const ry = seededRandom(obj.id, i + 37 + attempt * 0.17);
+        px3 = pileX + Math.floor(rx * (pileW - pw));
+        py3 = pileY + Math.floor(ry * (pileH - ph));
+        attempt++;
+        // check overlap
+        let coll = false;
+        for (let r = 0; r < placed.length; r++) {
+          const p = placed[r];
+          if (!(px3 + pw < p.x || px3 > p.x + p.w || py3 + ph < p.y || py3 > p.y + p.h)) {
+            coll = true; break;
+          }
+        }
+        if (!coll) break;
+      } while (attempt < 8);
+
+      placed.push({ x: px3, y: py3, w: pw, h: ph });
+      drawViewerPaperSelected(px3, py3, pw, ph, fileTone(f.fresh), '#000000', f);
+      addHotspot(px3, py3, pw, ph, f.name, 'file', fileHotspotMeta(f, i));
+    }
+  } else if (obj.type === 'trunk') {
+    const trunkX = 48;
+    const trunkY = 60;
+    const trunkW = 212;
+    const trunkH = 142;
+
+    inspCtx.fillStyle = '#ffffff';
+    inspCtx.fillRect(trunkX, trunkY, trunkW, trunkH);
+    inspCtx.strokeStyle = '#000000';
+    inspCtx.lineWidth = 2;
+    inspCtx.strokeRect(trunkX, trunkY, trunkW, trunkH);
+
+    const sectionHeight = Math.floor((trunkH - 26) / 3);
+    const sections = partitionFiles(files, 3);
+
+    for (let i = 0; i < 3; i++) {
+      const sectionLabel = `section ${i + 1}`;
+      const sectionY = trunkY + 10 + i * sectionHeight;
+      const sectionH = sectionHeight - 8;
+      const sectionX = trunkX;
+      const sectionW = trunkW;
+      inspCtx.lineWidth = 1.5;
+      inspCtx.strokeRect(sectionX, sectionY, sectionW, sectionH);
+      inspCtx.fillStyle = '#f0f0f0';
+      inspCtx.fillRect(sectionX, sectionY, sectionW, sectionH);
+      inspCtx.fillStyle = '#000000';
+      inspCtx.fillRect(sectionX + sectionW - 28, sectionY + sectionH / 2 - 6, 18, 12);
+
+      addHotspot(sectionX, sectionY, sectionW, sectionH, sectionLabel, 'section', sectionLabel);
+      if (selectedInspectorSection === sectionLabel) {
+        inspCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        inspCtx.fillRect(sectionX, sectionY, sectionW, sectionH);
+      }
+
+      const sectionFiles = sections[i];
+      sectionFiles.forEach((f, j) => {
+        const px3 = sectionX + 10 + (j % 5) * 36;
+        const py3 = sectionY + 8 + Math.floor(j / 5) * 20;
+        drawViewerPaperSelected(px3, py3, 30, 10, fileTone(f.fresh), '#000000', f);
+        const fileIndex = files.indexOf(f);
+        addHotspot(px3, py3, 30, 10, f.name, 'file', fileHotspotMeta(f, fileIndex));
+      });
+    }
+  } else if (obj.type === 'drawer') {
+    const boxX = 80;
+    const boxY = 56;
+    const boxW = 160;
+    const boxH = 136;
+
+    inspCtx.fillStyle = '#ffffff';
+    inspCtx.fillRect(boxX, boxY, boxW, boxH);
+    inspCtx.strokeStyle = '#000000';
+    inspCtx.lineWidth = 2;
+    inspCtx.strokeRect(boxX, boxY, boxW, boxH);
+
+    const drawers = 3;
+    const drawerHeight = Math.floor((boxH - 24) / drawers);
+    const sections = partitionFiles(files, drawers);
+
+    for (let i = 0; i < drawers; i++) {
+      const drawerLabel = `drawer ${i + 1}`;
+      const drawerY = boxY + 10 + i * drawerHeight;
+      const drawerH = drawerHeight - 8;
+      const drawerX = boxX;
+      const drawerW = boxW;
+      inspCtx.fillRect(drawerX, drawerY, drawerW, drawerH);
+      inspCtx.strokeStyle = '#000000';
+      inspCtx.lineWidth = 1.5;
+      inspCtx.strokeRect(drawerX, drawerY, drawerW, drawerH);
+      inspCtx.fillStyle = '#000000';
+      inspCtx.fillRect(drawerX + drawerW - 26, drawerY + drawerH / 2 - 6, 16, 12);
+
+      addHotspot(drawerX, drawerY, drawerW, drawerH, drawerLabel, 'section', drawerLabel);
+      if (selectedInspectorSection === drawerLabel) {
+        inspCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        inspCtx.fillRect(drawerX, drawerY, drawerW, drawerH);
+      }
+
+      const drawerFiles = sections[i];
+      drawerFiles.forEach((f, j) => {
+        const px3 = drawerX + 8 + (j % 5) * 34;
+        const py3 = drawerY + 8 + Math.floor(j / 5) * 20;
+        drawViewerPaperSelected(px3, py3, 28, 10, fileTone(f.fresh), '#000000', f);
+        const fileIndex = files.indexOf(f);
+        addHotspot(px3, py3, 28, 10, f.name, 'file', fileHotspotMeta(f, fileIndex));
+      });
+    }
+  } else {
+    // pinboard and fallback
+    inspCtx.fillStyle = '#cccccc';
+    inspCtx.fillRect(70, 24, 148, 118);
+    for (let i = 0; i < maxFiles; i++) {
+      const f = files[i];
+      const px3 = 82 + (i % 3) * 42;
+      const py3 = 36 + Math.floor(i / 3) * 30;
+      drawViewerPaperSelected(px3, py3, 28, 18, fileTone(f.fresh), '#000000', f);
+      inspCtx.fillStyle = '#000000';
+      inspCtx.fillRect(px3 + 12, py3 - 2, 4, 4);
+      addHotspot(px3, py3, 28, 18, f.name, 'file', fileHotspotMeta(f, i));
+    }
+  }
+
+  if (useSceneTransform) inspCtx.restore();
+}
+
+inspCanvas.addEventListener('click', e => {
+  if (!document.getElementById('inspector').classList.contains('active')) return;
+  const rect = inspCanvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (inspCanvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (inspCanvas.height / rect.height);
+  for (let i = inspHotspots.length - 1; i >= 0; i--) {
+    const h = inspHotspots[i];
+    if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) {
+      playSelectionClick();
+      if (h.type === 'section') {
+        selectInspectorSection(h.meta);
+      } else if (h.type === 'file') {
+        const file = h.meta?.file;
+        if (!file || !selectedInspectorObject?.files) break;
+        const fileIndex = typeof h.meta.fileIndex === 'number'
+          ? h.meta.fileIndex
+          : selectedInspectorObject.files.indexOf(file);
+        const readable = getReadableEntry(selectedInspectorObject.id, file.name);
+        selectInspectorFile(file, fileIndex);
+        if (readable) {
+          openFileReader(readable);
+          renderInspectorObject(selectedInspectorObject, true);
+        } else {
+          closeFileReader();
+          renderInspectorObject(selectedInspectorObject, true);
+        }
+      }
+      break;
+    }
+  }
+});
+
+inspCanvas.addEventListener('mousemove', e => {
+  if (!document.getElementById('inspector').classList.contains('active')) return;
+  const rect = inspCanvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (inspCanvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (inspCanvas.height / rect.height);
+  let hit = null;
+  for (let i = inspHotspots.length - 1; i >= 0; i--) {
+    const h = inspHotspots[i];
+    if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) {
+      hit = h;
+      break;
+    }
+  }
+  const hoverEl = document.getElementById('insp-hover');
+  if (hit) {
+    const readable = hit.type === 'file' && selectedInspectorObject
+      ? getReadableEntry(selectedInspectorObject.id, hit.fileName)
+      : null;
+    hoverEl.textContent = readable ? `${hit.fileName} — click to read` : hit.fileName;
+  } else {
+    hoverEl.textContent = selectedInspectorFile
+      ? `selected: ${selectedInspectorFile.name}`
+      : 'hover a file...';
+  }
+});
+
+inspCanvas.addEventListener('mouseleave', () => {
+  const hoverEl = document.getElementById('insp-hover');
+  hoverEl.textContent = selectedInspectorFile
+    ? `selected: ${selectedInspectorFile.name}`
+    : 'hover a file...';
+});
+
+function openInspector(obj) {
+  closeFileReader();
+  clearInspectorFileSelection();
+  selectedInspectorObject = obj;
+  document.getElementById('insp-title').textContent = obj.label;
+  document.getElementById('insp-sub').textContent =
+    obj.type.toUpperCase() + ' — ' + obj.files.length + ' items';
+  renderInspectorObject(obj);
+  document.getElementById('inspector').classList.add('active');
+}
+
+document.getElementById('insp-create-btn').onclick = createInspectorFile;
+document.getElementById('insp-file-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    createInspectorFile();
+    e.preventDefault();
+  }
+});
+const trashPinEl = document.getElementById('insp-trash-pin');
+if (trashPinEl) {
+  trashPinEl.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!selectedInspectorFile) return;
+    takeSelectedFileToTrash();
+  });
+}
+
+document.getElementById('insp-reader-close').onclick = () => {
+  playSelectionClick();
+  closeFileReader();
+  const hoverEl = document.getElementById('insp-hover');
+  hoverEl.textContent = selectedInspectorFile
+    ? `selected: ${selectedInspectorFile.name}`
+    : 'hover a file...';
+};
+
+document.getElementById('insp-close').onclick = () => {
+  playSelectionClick();
+  closeFileReader();
+  document.getElementById('inspector').classList.remove('active');
+  clearInspectorFileSelection();
+  updateInspectorActions(null);
+};
+document.getElementById('inspector').addEventListener('click', e => {
+  if (e.target === document.getElementById('inspector')) {
+    closeFileReader();
+    document.getElementById('inspector').classList.remove('active');
+    clearInspectorFileSelection();
+    updateInspectorActions(null);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const reader = document.getElementById('insp-reader');
+  if (reader?.classList.contains('active')) {
+    playSelectionClick();
+    closeFileReader();
+    return;
+  }
+  if (document.getElementById('inspector').classList.contains('active')) {
+    playSelectionClick();
+    closeFileReader();
+    document.getElementById('inspector').classList.remove('active');
+    clearInspectorFileSelection();
+    updateInspectorActions(null);
+  }
+});
+
+// ════════════════════════════════════════════
+// CLOCK
+// ════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('mb-clock').textContent = h+':'+m;
+}
+updateClock(); setInterval(updateClock, 10000);
+
+// ════════════════════════════════════════════
+// LOOP
+// ════════════════════════════════════════════
+function loop() {
+  updateCameraFromMouseHover();
+  updateDepthLook();
+  hovered = getHoveredObject(mx, my);
+  drawCursor(!!hovered);
+  render();
+  requestAnimationFrame(loop);
+}
+
+// Initial camera: centre on studio
+const studioCenter = tileToScreen(9, 9);
+camX = studioCenter.sx - canvas.width/2 + canvas.width/2;
+camY = studioCenter.sy - canvas.height/2 + canvas.height/2 - 40;
+
+loop();
+
+// Handle resize
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+</body>
+</html>

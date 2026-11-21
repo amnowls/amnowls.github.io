@@ -1,0 +1,120 @@
+/* Anna Nolden — portfolio. Plain HTML index; projects open in a pop-up. */
+:root{--ink:#111;--link:#0000ee;--visited:#551a8b;--mute:#6b6b6b;--paper:#fffffe;--line:#ddd;--lcd:#2337e8}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink)}
+html.locked{overflow:hidden}
+body{font:17px/1.4 "Times New Roman",Times,serif;padding:18px 18px 60px;-webkit-text-size-adjust:100%}
+a{color:var(--link)} a:visited{color:var(--visited)}
+button.link{all:unset;cursor:pointer;color:var(--link);text-decoration:underline}
+:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
+button.link:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header: the LCD is the name, and the way home */
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.top nav{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline}
+.top nav #links{display:flex;gap:14px;flex-wrap:wrap}
+.top nav #links:empty{display:none}
+canvas.lcd{display:block;border-radius:3px;box-shadow:0 0 0 3px #f1f1ee,0 0 0 4px #cfcfca}
+.home{display:inline-block;line-height:0}
+.bio{max-width:31em;margin:56px 0 72px}
+.bio p{margin:0 0 .7em}
+.bio h1{font-size:17px;font-weight:bold;margin:0 0 .4em}
+
+/* index table */
+.wrap{position:relative}
+table{width:100%;border-collapse:collapse;position:relative;z-index:1}
+th{font-weight:bold;text-align:left;padding:4px 8px;border-bottom:1px solid var(--ink);white-space:nowrap}
+td{vertical-align:top;padding:12px 8px 30px;border-bottom:1px solid var(--line)}
+td.n{color:var(--mute);width:2.5em;font-variant-numeric:tabular-nums}
+td.t{width:26%}
+td.t a{font-size:23px;font-style:italic;text-decoration:none;line-height:1.1}
+td.t a:hover{text-decoration:underline}
+td.t small{display:block;color:var(--mute);font-size:15px;margin-top:2px}
+td.y{width:4em;font-variant-numeric:tabular-nums}
+.tok{white-space:nowrap}
+.tok.k{border-bottom:1px dotted var(--ink);cursor:default}
+.tok.k.hi{background:#ffff66}
+tr.row:hover td{background:#fafaf6}
+tr.hi td{background:#fffff0}
+svg.cords{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
+svg.cords path{fill:none;stroke:var(--ink);stroke-width:1.1}
+svg.cords path.hi{stroke:var(--link);stroke-width:1.6}
+svg.cords circle{fill:var(--ink)}
+.after{margin-top:46px;color:var(--mute)}
+footer{margin-top:90px;color:var(--mute);font-size:14px;max-width:46em}
+noscript p{max-width:34em}
+
+/* ---- pop-up: fixed size, everything fits; nothing scrolls on desktop ---- */
+.pop{position:fixed;inset:0;z-index:30;display:none}
+.pop.open{display:block}
+.pop .veil{position:absolute;inset:0;background:var(--paper);opacity:.84}
+.pop .sheet{position:absolute;inset:0;margin:auto;width:min(1080px,90vw);height:min(700px,86vh);
+            background:var(--paper);border:1px solid var(--ink);box-shadow:0 30px 80px -40px #0005;
+            display:flex;flex-direction:column;padding:14px 22px 12px;overflow:hidden;animation:rise .25s cubic-bezier(.2,.7,.2,1)}
+.pop .sheet:focus{outline:none}
+@keyframes rise{from{transform:translateY(12px)}to{transform:none}}
+.pop .bar{flex:none;display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px;color:var(--mute)}
+.pop .nav{flex:none;display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+.pop .nav .keys{color:var(--mute);font-size:14px}
+
+.pv{flex:1;min-height:0;display:grid;grid-template-columns:290px minmax(0,1fr);gap:34px}
+.side{overflow:auto;min-height:0;padding-right:4px}
+.side canvas.ttl{margin:2px 0 16px;box-shadow:none;border-radius:2px}
+.side p{margin:0 0 .8em}
+.side dl{margin:14px 0 0;display:grid;grid-template-columns:6.5em 1fr;gap:3px 10px;font-size:15px}
+.side dt{color:var(--mute)} .side dd{margin:0}
+.media{display:flex;flex-direction:column;min-height:0}
+
+/* stage: no box, no border; media sits straight on the page */
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+.stage img,.stage video{max-width:100%;max-height:100%;display:block;cursor:zoom-in}
+.stage video{cursor:pointer}
+.stage iframe{width:100%;height:100%;border:0;background:#000}
+
+/* under the stage: video controls left, enlarge right */
+.ctl{flex:none;display:flex;align-items:center;gap:12px;margin-top:8px;font-size:15px;min-height:22px}
+.ctl .vc{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.ctl .grow{flex:1}
+.ctl .t{color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl .snd.on{color:#fff;background:var(--lcd);text-decoration:none;padding:0 4px}
+input.scrub{flex:1;min-width:60px;-webkit-appearance:none;appearance:none;background:transparent;height:16px;margin:0;cursor:pointer}
+input.scrub::-webkit-slider-runnable-track{height:1px;background:var(--ink)}
+input.scrub::-moz-range-track{height:1px;background:var(--ink)}
+input.scrub::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;border-radius:50%;background:var(--ink);margin-top:-4px}
+input.scrub::-moz-range-thumb{width:9px;height:9px;border:0;border-radius:50%;background:var(--ink)}
+
+/* thumbnails: no frames; the current one is full strength with a short rule under it */
+.rail{flex:none;display:flex;gap:10px;margin-top:12px;overflow-x:auto;padding-bottom:4px}
+.rail button{all:unset;cursor:pointer;flex:none;height:50px;position:relative;opacity:.45;transition:opacity .2s;padding-bottom:5px}
+.rail button:hover{opacity:.85}
+.rail button:focus-visible{outline:2px solid var(--lcd);outline-offset:2px;opacity:1}
+.rail button[aria-current=true]{opacity:1}
+.rail button[aria-current=true]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink)}
+.rail button img{height:50px;width:auto;max-width:110px;object-fit:cover;display:block}
+.rail button .lbl{position:absolute;left:4px;top:3px;font-size:11px;color:#fff;text-shadow:0 0 3px #000}
+
+/* lightbox */
+.lb{position:fixed;inset:0;background:#fffffef8;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 70px 50px}
+.lb.open{display:flex}
+.lb .m{max-width:100%;max-height:calc(100vh - 110px);display:block}
+.lb iframe.m{width:min(1200px,90vw);height:calc(100vh - 110px);border:0;background:#000}
+.lb .n{position:absolute;left:18px;top:14px;color:var(--mute);font-variant-numeric:tabular-nums}
+.lb button{all:unset;cursor:pointer;position:absolute;color:var(--link);font-size:28px;padding:10px}
+.lb .prev{left:12px;top:50%} .lb .next{right:12px;top:50%} .lb .x{right:14px;top:6px;font-size:17px;text-decoration:underline}
+.lb button:focus-visible{outline:2px solid var(--lcd)}
+
+@media (max-width:760px){
+  th.m,td.m,th.w,td.w{display:none}
+  .bio{margin-top:30px}
+  .pop .sheet{width:100vw;height:100%;border:0;overflow:auto;display:block;padding:14px 16px 30px}
+  .pv{grid-template-columns:minmax(0,1fr);gap:18px;display:grid}
+  .side{overflow:visible}
+  .stage{height:46vh;flex:none}
+  .lb{padding:40px 10px 50px}
+  .pop .nav .keys{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .pop .sheet{animation:none}
+  .rail button{transition:none}
+}
