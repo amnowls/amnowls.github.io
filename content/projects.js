@@ -22,7 +22,7 @@
 window.SITE = {
   bio: [
     "I’m an interaction designer and design technologist based in Stockholm, studying Interactive Media Technology at KTH. Before that I studied Interaction Design Arts and Creative Computing at UAL in London. Originally from Boston.",
-    "/nElectronics/fabrication/sound/interfaces"
+    "electronics  //  fabrication //  sound  //  interfaces"
   ],
   links: {
     email:    "annanolden0@gmail.com",
@@ -42,7 +42,7 @@ window.PROJECTS = [
     with: "Chanhee Jeong, Montana Eriksson, Szu-Yi Ho",
     mine: "Full double-diamond process with the group; I modelled, built, and soldered the remote control.",
     tools: ["ESP32", "Bluetooth LE", "rotary encoder", "Fusion 360", "3d print", "SwiftUI", "projector"],
-    line: "The pencil mark on a doorframe, made portable. A phone films you at the wall; a projector plays every past record back on any wall, at real height.",
+    line: "Inspired by the familial ritual of marking height on walls, Memory Meter digitizes this tradition to allow it to continue through moves and time. Videos of each child's growth project life-sized on your wall with easy home setup.",
     note: "Showing at NAVET Week, Scenkonstmuseet, 9–10 Dec 2026.",
     media: [
       {video: "memorymeter/film", alt: "Film: recording a height at the wall and playing it back."},
@@ -57,7 +57,7 @@ window.PROJECTS = [
     with: "Isabel Andrews",
     mine: "3d modelling, fabrication and soldering, LCD panel, interface graphics, program prototyping.",
     tools: ["5× ESP32s", "microphones", "UDP", "Whisper", "FastAPI", "Fusion 360", "laser-cut ply", "tin can"],
-    line: "Five hidden microphones around an exhibition space. Pick a channel with a slider, listen through a tin can, and watch a machine try and fail to write down what it hears.",
+    line: "Five hidden microphones around an exhibition space with a central spy-station, where all audio signals are received. Pick a channel with a slider, listen through a tin can, and watch a machine try to transcribe what it hears.",
     media: [
       {img: "ispy/monitor", alt: "A white plywood monitor with a blue floor-plan screen, a tin can speaker and a small LCD."},
       {img: "ispy/transcript", alt: "The screen showing a live, partly misheard transcript."},
@@ -71,7 +71,7 @@ window.PROJECTS = [
     with: null,
     mine: "solo; built with Claude Code from my specs.",
     tools: ["HTML", "canvas", "isometric", "Claude Code"],
-    line: "A desktop where files are stored spatially. You locate things by remembering where you put them.",
+    line: "An imagined OS desktop where files are stored spatially. You locate your digital belongings by remembering where you put them.",
     music: "Tottomori (walkthrough and prototype)",
     media: [
       {video: "spaceos/walkthrough", alt: "Walkthrough: moving through rooms, opening furniture, the trash, painting a room, Find."},
@@ -86,7 +86,7 @@ window.PROJECTS = [
     with: "Isabel Andrews",
     mine: "game code, sprites, all music and sound, screen mount.",
     tools: ["Phaser.js", "Raspberry Pi", "Aseprite", "Logic", "Fusion 360", "laser-cut ply", "resin"],
-    line: "A small arcade cabinet about seed laws. You farm, season by season; the mini-games are rigged the way the system is.",
+    line: "A small arcade game about seed laws, with a custom arcade cabinet. You farm, season by season, making decisions as time passes and playing mini-games to, hopefully, escape a gloomy future.",
     media: [
       {img: "sowwhat/cabinet", alt: "The arcade cabinet: painted plywood, a screen, a bean-shaped joystick."},
       {video: "sowwhat/gameplay", alt: "Gameplay: escaping the seed inspector."},
@@ -101,7 +101,7 @@ window.PROJECTS = [
     with: "Isabel Andrews",
     mine: "Modelled and fabricated both devices; electronics and soldering.",
     tools: ["ESP32", "MicroPython", "MQTT", "text-to-speech", "Fusion 360", "3d print"],
-    line: "Spell a message letter by letter on a dial. In another room it arrives as a voice, through a cone, and plays once.",
+    line: "Two devices, a transmitter and receiver, serve as a wireless communication system designed aroun the slow technology movement. Spell a message letter by letter on a dial. In another room it arrives as a voice, through a cone, and plays once. Presence, intention, and listening forefront the interaction.",
     media: [
       {video: "transmitter/film", silent: true, alt: "Film: spelling a message on the dial, then lifting the cone to hear it."},
       {img: "transmitter/pair", alt: "The white transmitter and receiver side by side."},
@@ -134,7 +134,7 @@ window.EXTRAS = [
     with: null,
     mine: "solo: researched, wrote, typeset, printed and bound it",
     tools: ["homemade mycelium paper", "screenprint", "coptic binding", "G.F. Smith recycled paper"],
-    line: "58 pages, written, set and coptic-bound by hand, on mycelium as material and model.",
+    line: "A book about mycelium and circular economy, envisioning a future in which our systems are inspired by the circular processes found in nature. 58 pages, written, set and coptic-bound by hand, on mycelium as material and model.",
     media: [
       {video: "myco/flip", silent: true, alt: "Flipping through the book."},
       {img: "myco/covers", alt: "Two copies: one covered in scrap cotton, one in reused card."},
