@@ -3,7 +3,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--paper);color:var(--ink)}
 html.locked{overflow:hidden}
-body{font:17px/1.4 "verdana",Times,serif;padding:32px 24px 18px;-webkit-text-size-adjust:100%}
+body{font:17px/1.4 "verdana",Times,serif;padding:32px 24px 18px;-webkit-text-size-adjust:90%}
 a{color:var(--link)} a:visited{color:var(--visited)}
 button.link{all:unset;cursor:pointer;color:var(--link);text-decoration:underline}
 :focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
