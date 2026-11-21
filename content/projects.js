@@ -28,7 +28,7 @@ window.SITE = {
     email:    "annanolden0@gmail.com",
     github:   "https://github.com/amnowls",
     linkedin: "https://www.linkedin.com/in/anna-nolden-37017a252",
-    cv:       ""           // e.g. "anna-nolden-cv.pdf" (put the PDF in the site folder)
+    cv:       "anna-nolden-cv.pdf"
   },
   // words joined by the hanging cords in the index (must match text in "tools" or "with" exactly)
   cords: ["ESP32", "Fusion 360", "3d print", "laser-cut ply", "Isabel Andrews"],
@@ -56,7 +56,7 @@ window.PROJECTS = [
     where: "UAL, IDA graduate show",
     with: "Isabel Andrews",
     mine: "3d modelling, fabrication and soldering, LCD panel, interface graphics, program prototyping.",
-    tools: ["5× ESP32 mics", "UDP", "Whisper", "FastAPI", "Fusion 360", "laser-cut ply", "tin can"],
+    tools: ["5× ESP32s", "microphones", "UDP", "Whisper", "FastAPI", "Fusion 360", "laser-cut ply", "tin can"],
     line: "Five hidden microphones around an exhibition space. Pick a channel with a slider, listen through a tin can, and watch a machine try and fail to write down what it hears.",
     media: [
       {img: "ispy/monitor", alt: "A white plywood monitor with a blue floor-plan screen, a tin can speaker and a small LCD."},
