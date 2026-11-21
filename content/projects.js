@@ -32,7 +32,7 @@ window.SITE = {
   },
   // words joined by the hanging cords in the index (must match text in "tools" or "with" exactly)
   cords: ["ESP32", "Fusion 360", "3d print", "laser-cut ply", "Isabel Andrews"],
-  credits: "Music in SPACE-OS by Tottomori. Collaborators are named on each project. Site built by hand; set in Times."
+  // credits: "Music in SPACE-OS by Tottomori. Collaborators are named on each project. Site built by hand; set in Times."
 };
 
 window.PROJECTS = [

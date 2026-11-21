@@ -16,6 +16,9 @@ button.link:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
 .top nav #links{display:flex;gap:14px;flex-wrap:wrap}
 .top nav #links:empty{display:none}
 canvas.lcd{display:block;border-radius:3px;box-shadow:0 0 0 3px #f1f1ee,0 0 0 4px #cfcfca}
+/* the name LCD shrinks to fit narrow screens (its size is set by data-dot in the HTML) */
+.home{max-width:100%}
+.home canvas.lcd{max-width:100%;height:auto!important}
 .home{display:inline-block;line-height:0}
 .bio{max-width:31em;margin:56px 0 72px}
 .bio p{margin:0 0 .7em}
