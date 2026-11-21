@@ -22,7 +22,7 @@
 window.SITE = {
   bio: [
     "I’m an interaction designer and design technologist based in Stockholm, studying Interactive Media Technology at KTH. Before that I studied Interaction Design Arts and Creative Computing at UAL in London. Originally from Boston.",
-    "electronics\u2003-\u2003fabrication\u2003-\u2003sound\u2003-\u2003interfaces"
+    "/nElectronics/fabrication/sound/interfaces"
   ],
   links: {
     email:    "annanolden0@gmail.com",
