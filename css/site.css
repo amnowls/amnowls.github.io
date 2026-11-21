@@ -1,9 +1,9 @@
 /* Anna Nolden — portfolio. Plain HTML index; projects open in a pop-up. */
-:root{--ink:#111;--link:#0000ee;--visited:#551a8b;--mute:#6b6b6b;--paper:#fffffe;--line:#ddd;--lcd:#2337e8}
+:root{--ink:#111;--link:#0000ee;--visited:#3314b3;--mute:#6b6b6b;--paper:#fffffe;--line:#ddd;--lcd:#2337e8}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--paper);color:var(--ink)}
 html.locked{overflow:hidden}
-body{font:17px/1.4 "Times New Roman",Times,serif;padding:18px 18px 60px;-webkit-text-size-adjust:100%}
+body{font:17px/1.4 "verdana",Times,serif;padding:32px 24px 18px;-webkit-text-size-adjust:100%}
 a{color:var(--link)} a:visited{color:var(--visited)}
 button.link{all:unset;cursor:pointer;color:var(--link);text-decoration:underline}
 :focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
@@ -18,7 +18,7 @@ button.link:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
 canvas.lcd{display:block;border-radius:3px;box-shadow:0 0 0 3px #f1f1ee,0 0 0 4px #cfcfca}
 /* the name LCD shrinks to fit narrow screens (its size is set by data-dot in the HTML) */
 .home{max-width:100%}
-.home canvas.lcd{max-width:100%;height:auto!important}
+.home canvas.lcd{max-width:80%;height:auto!important}
 .home{display:inline-block;line-height:0}
 .bio{max-width:31em;margin:56px 0 72px}
 .bio p{margin:0 0 .7em}
@@ -31,7 +31,7 @@ th{font-weight:bold;text-align:left;padding:4px 8px;border-bottom:1px solid var(
 td{vertical-align:top;padding:12px 8px 30px;border-bottom:1px solid var(--line)}
 td.n{color:var(--mute);width:2.5em;font-variant-numeric:tabular-nums}
 td.t{width:26%}
-td.t a{font-size:23px;font-style:italic;text-decoration:none;line-height:1.1}
+td.t a{font-size:23px;font-style:normal;text-decoration:none;line-height:1.1}
 td.t a:hover{text-decoration:underline}
 td.t small{display:block;color:var(--mute);font-size:15px;margin-top:2px}
 td.y{width:4em;font-variant-numeric:tabular-nums}

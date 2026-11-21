@@ -21,7 +21,7 @@
 
 window.SITE = {
   bio: [
-    "I’m an interaction designer and design technologist based in Stockholm, studying Interactive Media Technology at KTH. Before that I studied Interaction Design Arts and Creative Computing at UAL in London. Originally from Boston.",
+    "I am an interaction designer and design technologist based in Stockholm, studying a Masters of Science in Interactive Media Technology at KTH. Before that I studied Interaction Design Arts and Creative Computing at UAL in London. Originally from Boston.",
     "electronics  //  fabrication //  sound  //  interfaces"
   ],
   links: {
@@ -37,7 +37,7 @@ window.SITE = {
 
 window.PROJECTS = [
   {
-    id: "memorymeter", title: "Memory Meter", kind: "device + app", year: 2026,
+    id: "memorymeter", title: "memory meter", kind: "device + app", year: 2026,
     where: "KTH, DM2601",
     with: "Chanhee Jeong, Montana Eriksson, Szu-Yi Ho",
     mine: "Full double-diamond process with the group; I modelled, built, and soldered the remote control.",
@@ -66,7 +66,7 @@ window.PROJECTS = [
     ]
   },
   {
-    id: "spaceos", title: "SPACE-OS", kind: "interface", year: 2026,
+    id: "spaceos", title: "space-OS", kind: "interface", year: 2026,
     where: "UAL, IDA final major project",
     with: null,
     mine: "solo; built with Claude Code from my specs.",
@@ -81,7 +81,7 @@ window.PROJECTS = [
     ]
   },
   {
-    id: "sowwhat", title: "Sow What?!", kind: "arcade game", year: 2026,
+    id: "sowwhat", title: "sow what?!", kind: "arcade game", year: 2026,
     where: "UAL, Science Museum ‘Future of Food’ brief",
     with: "Isabel Andrews",
     mine: "game code, sprites, all music and sound, screen mount.",
@@ -96,7 +96,7 @@ window.PROJECTS = [
     ]
   },
   {
-    id: "transmitter", title: "Transmission Pending", kind: "communication system", year: 2025,
+    id: "transmitter", title: "transmission pending", kind: "communication system", year: 2025,
     where: "UAL Creative Computing Institute",
     with: "Isabel Andrews",
     mine: "Modelled and fabricated both devices; electronics and soldering.",
@@ -129,7 +129,7 @@ window.PROJECTS = [
 
 window.EXTRAS = [
   {
-    id: "myco", title: "Mycomorphosis", kind: "book", year: 2024,
+    id: "myco", title: "mycomorphosis", kind: "book", year: 2024,
     where: "UAL London College of Communication, Design Production",
     with: null,
     mine: "solo: researched, wrote, typeset, printed and bound it",

@@ -14,7 +14,7 @@ window.LCD = (() => {
   }
   const BG="#2337e8", ON="#e2e8ff", OFF="#2d44f2";
   function draw(cv, lines, upto){
-    const cols=+cv.dataset.cols || 16, rows=+cv.dataset.rows || 2, dot=+cv.dataset.dot || 2, gap=Math.max(1,Math.round(dot/2)), cw=5*(dot+gap)+dot, ch=8*(dot+gap)+dot*2;
+    const cols=+cv.dataset.cols || 13, rows=+cv.dataset.rows || 2, dot=+cv.dataset.dot || 2, gap=Math.max(1,Math.round(dot/2)), cw=5*(dot+gap)+dot, ch=8*(dot+gap)+dot*2;
     const W = cols*cw+dot*2, H = rows*ch+dot*2, dpr = devicePixelRatio||1;
     if (cv.width !== W*dpr){ cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px"; }
     const x = cv.getContext("2d"); x.setTransform(dpr,0,0,dpr,0,0);
