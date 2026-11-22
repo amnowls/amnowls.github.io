@@ -1,11 +1,13 @@
 /* Anna Nolden — portfolio. Plain HTML index; projects open in a pop-up. */
-:root{--ink:#111;--link:#0000ee;--visited:#3314b3;--mute:#6b6b6b;--paper:#fffffe;--line:#ddd;--lcd:#2337e8}
+:root{--ink:#111;--link:#0000ee;--visited:#3314b3;--mute:#6b6b6b;--paper:#fffffe;--line:#ddd;--lcd:#2337e8;--arrow:url(../cursors/arrow.svg) 0 0,default;--hand:url(../cursors/hand.svg) 8 0,pointer}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--paper);color:var(--ink)}
 html.locked{overflow:hidden}
 body{font:17px/1.4 "verdana",Times,serif;padding:32px 24px 18px;-webkit-text-size-adjust:90%}
+html{cursor:var(--arrow)}
+a,a *{cursor:var(--hand)}
 a{color:var(--link)} a:visited{color:var(--visited)}
-button.link{all:unset;cursor:pointer;color:var(--link);text-decoration:underline}
+button.link{all:unset;cursor:var(--hand);color:var(--link);text-decoration:underline}
 :focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
 button.link:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -36,10 +38,10 @@ td.t a:hover{text-decoration:underline}
 td.t small{display:block;color:var(--mute);font-size:15px;margin-top:2px}
 td.y{width:4em;font-variant-numeric:tabular-nums}
 .tok{white-space:nowrap}
-.tok.k{border-bottom:1px dotted var(--ink);cursor:default}
+.tok.k{border-bottom:1px dotted var(--ink);cursor:var(--arrow)}
 .tok.k.hi{background:#ffff66}
-tr.row:hover td{background:#fafaf6}
-tr.hi td{background:#fffff0}
+tr.row:hover td{background:#ffff83}
+tr.hi td{background:#f2f8ff}
 svg.cords{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
 svg.cords path{fill:none;stroke:var(--ink);stroke-width:1.1}
 svg.cords path.hi{stroke:var(--link);stroke-width:1.6}
@@ -72,7 +74,7 @@ noscript p{max-width:34em}
 /* stage: no box, no border; media sits straight on the page */
 .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
 .stage img,.stage video{max-width:100%;max-height:100%;display:block;cursor:zoom-in}
-.stage video{cursor:pointer}
+.stage video{cursor:var(--hand)}
 .stage iframe{width:100%;height:100%;border:0;background:#000}
 
 /* under the stage: video controls left, enlarge right */
@@ -81,7 +83,7 @@ noscript p{max-width:34em}
 .ctl .grow{flex:1}
 .ctl .t{color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ctl .snd.on{color:#fff;background:var(--lcd);text-decoration:none;padding:0 4px}
-input.scrub{flex:1;min-width:60px;-webkit-appearance:none;appearance:none;background:transparent;height:16px;margin:0;cursor:pointer}
+input.scrub{flex:1;min-width:60px;-webkit-appearance:none;appearance:none;background:transparent;height:16px;margin:0;cursor:var(--hand)}
 input.scrub::-webkit-slider-runnable-track{height:1px;background:var(--ink)}
 input.scrub::-moz-range-track{height:1px;background:var(--ink)}
 input.scrub::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;border-radius:50%;background:var(--ink);margin-top:-4px}
@@ -89,7 +91,7 @@ input.scrub::-moz-range-thumb{width:9px;height:9px;border:0;border-radius:50%;ba
 
 /* thumbnails: no frames; the current one is full strength with a short rule under it */
 .rail{flex:none;display:flex;gap:10px;margin-top:12px;overflow-x:auto;padding-bottom:4px}
-.rail button{all:unset;cursor:pointer;flex:none;height:50px;position:relative;opacity:.45;transition:opacity .2s;padding-bottom:5px}
+.rail button{all:unset;cursor:var(--hand);flex:none;height:50px;position:relative;opacity:.45;transition:opacity .2s;padding-bottom:5px}
 .rail button:hover{opacity:.85}
 .rail button:focus-visible{outline:2px solid var(--lcd);outline-offset:2px;opacity:1}
 .rail button[aria-current=true]{opacity:1}
@@ -103,7 +105,7 @@ input.scrub::-moz-range-thumb{width:9px;height:9px;border:0;border-radius:50%;ba
 .lb .m{max-width:100%;max-height:calc(100vh - 110px);display:block}
 .lb iframe.m{width:min(1200px,90vw);height:calc(100vh - 110px);border:0;background:#000}
 .lb .n{position:absolute;left:18px;top:14px;color:var(--mute);font-variant-numeric:tabular-nums}
-.lb button{all:unset;cursor:pointer;position:absolute;color:var(--link);font-size:28px;padding:10px}
+.lb button{all:unset;cursor:var(--hand);position:absolute;color:var(--link);font-size:28px;padding:10px}
 .lb .prev{left:12px;top:50%} .lb .next{right:12px;top:50%} .lb .x{right:14px;top:6px;font-size:17px;text-decoration:underline}
 .lb button:focus-visible{outline:2px solid var(--lcd)}
 
